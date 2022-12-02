@@ -478,3 +478,48 @@ FICO-winserver-2019-standard-cloudinit-test
 
 winserver-2019-standard-cloudinit-20201231.qcow2.xz
 
+
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file winserver-2019-standard-cloudinit-20201231.qcow2 \
+--min-disk 20 \
+--min-ram 2048 \
+--property title="FICO-winserver-2019-standard-nopasswd" \
+--property type="windows" \
+--property os_version="windows server-2019-standard" \
+--property os_type="windows" \
+--property release="true" \
+FICO-winserver-2019-standard-cloudinit-nopasswd
+
+
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file winserver-2019-standard-v3-20210105.qcow2 \
+--min-disk 20 \
+--min-ram 2048 \
+--property title="FICO-winserver-2019-standard-withpasswd" \
+--property type="windows" \
+--property os_version="windows server-2019-standard" \
+--property os_type="windows" \
+--property release="true" \
+FICO-winserver-2019-standard-cloudinit-withpasswd
+
+
+
+
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file FICO-Win2k16-SPLA.qcow2 \
+--min-disk 20 \
+--min-ram 2048 \
+--property os_version="windows 2016" \
+--property os_type="windows" \
+--property release="true" \
+FICO-Win2k16-SPLA-test
+

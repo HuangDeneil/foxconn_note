@@ -243,9 +243,9 @@ keystone-manage credential_setup --keystone-user keystone --keystone-group keyst
 ## Bootstrap the Identity service:
 ```bash 
 keystone-manage bootstrap --bootstrap-password admin_foxconn \
-  --bootstrap-admin-url http://192.168.77.4:5000/v3/ \
-  --bootstrap-internal-url http://192.168.77.4:5000/v3/ \
-  --bootstrap-public-url http://192.168.77.4:5000/v3/ \
+  --bootstrap-admin-url http://192.168.77.17:5000/v3/ \
+  --bootstrap-internal-url http://192.168.77.17:5000/v3/ \
+  --bootstrap-public-url http://192.168.77.17:5000/v3/ \
   --bootstrap-region-id RegionOne
 ```
 
@@ -257,27 +257,11 @@ keystone-manage bootstrap --bootstrap-password admin_foxconn \
 
 # Configure the Apache HTTP server
 
-
-
-# Start service
-```bash
-sudo systemctl start httpd
-```
-
-# Enable
-```bash
-sudo systemctl enable httpd
-```
-
-
-
 <!-- 
 ## change server name
 ```bash
 vim /etc/sysconfig/apache2
 ```
-
-
 ```conf
 APACHE_SERVERNAME="controller"
 ``` 
@@ -303,18 +287,38 @@ Listen 5000
         Require all granted
     </Directory>
 </VirtualHost>
+```
 
+```xml
+Listen 5000
+
+<VirtualHost *:5000>
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /usr/bin/keystone-wsgi-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    ErrorLogFormat "%{cu}t %M"
+    ErrorLog /var/log/apache2/keystone.log
+    CustomLog /var/log/apache2/keystone_access.log combined
+
+    <Directory /usr/bin>
+        Require all granted
+    </Directory>
+</VirtualHost>
 ```
 
 
+
+## keystone conf folder change right
 chown -R keystone:keystone /etc/keystone
 
 ## apache2 service start
 ```bash
+systemctl start httpd
 systemctl enable httpd
-systemctl start  httpd
-systemctl restart  httpd
-systemctl status httpd
+systemctl restart httpd
+# systemctl status httpd
 ```
 
 
