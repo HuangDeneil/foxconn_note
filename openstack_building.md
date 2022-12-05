@@ -342,6 +342,147 @@ openstack endpoint list
 
 
 
+# ----------------------------------------------------------
+# --------#####----------------------#----------------------
+# --------#----#----------#-----#--------#------#-----------
+# --------####-----###----###---###--#-#####--#####---------
+# --------#--#----#--#----#--#--#--#-#---#------#-----------
+# --------#---##---##--#--###---###--#---##-----##----------
+# ----------------------------------------------------------
+# Rabbitmq installation
+yum install rabbitmq-server -y
+
+<!-- 
+## 修改conf ? (這步驟不確定)
+nano /etc/rabbitmq/rabbitmq.conf
+```conf
+   ...
+[{rabbit,[{loopback_users, []}]}].
+``` -->
+
+## 啟動服務
+```bash
+sudo systemctl enable rabbitmq-server.service
+sudo systemctl start rabbitmq-server.service
+
+```
+
+## 如果有多節點的狀況 需要將 controll node的 `/var/lib/rabbitmq/.erlang.cookie` 複製到各節點上的 `/var/lib/rabbitmq`
+
+### `/var/lib/rabbitmq/.erlang.cookie` 需要改從屬 & 權限
+```bash
+sudo chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
+sudo chmod 400 /var/lib/rabbitmq/.erlang.cookie
+```
+
+## 在其他節點中加入controller控制
+```bash
+rabbitmqctl stop_app
+rabbitmqctl join_cluster rabbit@control1
+rabbitmqctl start_app
+rabbitmqctl rabbitmqctl cluter_status
+systemctl restart rabbitmq-server.service
+```
+
+## 設置用戶
+
+# 新增用戶
+```bash
+rabbitmqctl add_user openstack foxconn
+```
+# output
+```bash
+[root@deneil-barbican-test-keystone rocky]# rabbitmqctl add_user openstack foxconn
+warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8. Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell)
+Adding user "openstack" ...
+Done. Don't forget to grant the user permissions to some virtual hosts! See 'rabbitmqctl help set_permissions' to learn more.
+```
+
+# 設置用戶許可權
+```bash
+rabbitmqctl set_permissions -p / openstack ".*" ".*" ".*" 
+```
+# output
+```bash
+[root@deneil-barbican-test-keystone rocky]# rabbitmqctl set_permissions -p / openstack ".*" ".*" ".*" 
+warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8. Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell)
+Setting permissions for user "openstack" in vhost "/" ...
+```
+
+
+
+# 配置queue mirror
+```bash
+rabbitmqctl set_policy -p / ha-all '^(?!amq\.).*' '{"ha-mode": "all"}'
+```
+# output
+```bash
+[root@deneil-barbican-test-keystone rocky]# rabbitmqctl set_policy -p / ha-all '^(?!amq\.).*' '{"ha-mode": "all"}'
+warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8. Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell)
+Setting policy "ha-all" for pattern "^(?!amq\.).*" to "{"ha-mode": "all"}" with priority "0" for vhost "/" ...
+```
+
+
+
+```bash
+[root@controller-03 ~]# rabbitmqctl list_users
+Listing users ...
+guest [administrator]
+openstack []
+...done.
+[root@controller-03 ~]# rabbitmqctl list_permissions
+Listing permissions in vhost "/" ...
+guest .* .* .*
+openstack .* .* .*
+...done.
+[root@controller-03 ~]# rabbitmqctl list_policies
+Listing policies ...
+/ ha-all all ^(?!amq\\.).* {"ha-mode":"all"} 0
+...done.
+
+```
+
+## memcached
+dnf install memcached -y
+
+# 啟動
+```bash
+systemctl enable memcached.service
+systemctl start memcached.service
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # -----------------------------------------
 # -----------------------------------------
 # -----------------------------------------
@@ -515,9 +656,15 @@ project_domain_name = default
 user_domain_name = default
 project_name = service
 username = barbican
-password = foxconn
+password = admin_foxconn
 
 ```
+
+# Populate the Key Manager service database:
+```bash
+su -s /bin/sh -c "barbican-manage db upgrade" barbican
+```
+
 
 
 
@@ -563,18 +710,13 @@ password = foxconn
 
 
 
-# Rabbitmq installation
 
-yum install rabbitmq-server -y
 
-nano /etc/rabbitmq/rabbitmq.conf
-```conf
-   ...
-[{rabbit,[{loopback_users, []}]}].
-```
 
-sudo systemctl enable rabbitmq-server.service
-sudo systemctl start rabbitmq-server.service
+
+
+
+
 
 
 

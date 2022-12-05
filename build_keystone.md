@@ -38,17 +38,7 @@ SELINUX=disabled
 ...
 SELINUXTYPE=targeted
 ```
-
-
-
-
-
-
-
-
-
-
-
+### note : 沒有關閉selinux會導致keystone沒有權限開5000 port
 
 # keystone installation
 
@@ -118,7 +108,7 @@ Bye
 
 ### download required
 ```bash
-dnf install openstack-keystone httpd python3-mod_wsgi -y
+dnf install openstack-keystone httpd python3-mod_wsgi memcached -y
 ```
 
 ## Edit `keystone.conf`
