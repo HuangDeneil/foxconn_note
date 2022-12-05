@@ -668,6 +668,100 @@ su -s /bin/sh -c "barbican-manage db upgrade" barbican
 
 
 
+## wsgi-barbican.conf 
+```bash
+vim /etc/httpd/conf.d/wsgi-barbican.conf
+```
+
+
+
+
+```xml
+<VirtualHost [::1]:9311>
+    ServerName controller
+
+    ## Logging
+    ErrorLog "/var/log/httpd/barbican_wsgi_main_error_ssl.log"
+    LogLevel debug
+    ServerSignature Off
+    CustomLog "/var/log/httpd/barbican_wsgi_main_access_ssl.log" combined
+
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIDaemonProcess barbican-api display-name=barbican-api group=barbican processes=2 threads=8 user=barbican
+    WSGIProcessGroup barbican-api
+    WSGIScriptAlias / "/usr/lib/python2.7/site-packages/barbican/api/app.wsgi"
+    WSGIPassAuthorization On
+</VirtualHost>
+```
+
+
+```xml
+Listen 9311
+<VirtualHost 192.168.77.8:9311>
+    ServerName controller
+
+    ## Logging
+    ErrorLog "/var/log/httpd/barbican_wsgi_main_error_ssl.log"
+    LogLevel debug
+    ServerSignature Off
+    CustomLog "/var/log/httpd/barbican_wsgi_main_access_ssl.log" combined
+
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIDaemonProcess barbican-api display-name=barbican-api group=barbican processes=2 threads=8 user=barbican
+    WSGIProcessGroup barbican-api
+    WSGIScriptAlias / "/usr/lib/python2.7/site-packages/barbican/api/app.wsgi"
+    WSGIPassAuthorization On
+</VirtualHost>
+```
+
+
+# restart httpd
+```bash
+systemctl restart httpd
+```
+
+
+
+
+### Test barbican
+```bash
+openstack endpoint list
+openstack secret list
+
+```
+
+
+## Error message
+```bash
+[root@deneil-barbican-test-keystone conf.d]# openstack secret list
+Failed to contact the endpoint at http://192.168.77.8:9311 for discovery. Fallback to using that endpoint as the base url.
+4xx Client error: b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>403 Forbidden</title>\n</head><body>\n<h1>Forbidden</h1>\n<p>You don\'t have permission to access this resource.</p>\n</body></html>\n'
+b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>403 Forbidden</title>\n</head><body>\n<h1>Forbidden</h1>\n<p>You don\'t have 
+permission to access this resource.</p>\n</body></html>\n'
+
+```
+
+
+
+```bash
+[root@deneil-barbican-test-keystone conf.d]# openstack endpoint list
++----------------------------------+-----------+--------------+--------------+---------+-----------+------------------------------+
+| ID                               | Region    | Service Name | Service Type | Enabled | Interface | URL                          |
++----------------------------------+-----------+--------------+--------------+---------+-----------+------------------------------+
+| 63fd73bf135740d991734a62a50e1580 | RegionOne | barbican     | key-manager  | True    | admin     | http://192.168.77.8:9311     |
+| 7bcd950309664b8a9a1c85d38e66f25a | RegionOne | keystone     | identity     | True    | internal  | http://192.168.77.8:5000/v3/ |
+| 86ee10b51d1e4aa8b0db5f33a9f40886 | RegionOne | keystone     | identity     | True    | admin     | http://192.168.77.8:5000/v3/ |
+| 9fafc5b7011c45538574c3c9bfb08e2c | RegionOne | barbican     | key-manager  | True    | public    | http://192.168.77.8:9311     |
+| b426e6b08243440f820b3693d1f7de92 | RegionOne | keystone     | identity     | True    | public    | http://192.168.77.8:5000/v3/ |
+| e75000e70c86405a9790e9adb3a5284a | RegionOne | barbican     | key-manager  | True    | internal  | http://192.168.77.8:9311     |
++----------------------------------+-----------+--------------+--------------+---------+-----------+------------------------------+
+```
+
+
+
+
+
+
 
 
 ---
@@ -675,9 +769,9 @@ su -s /bin/sh -c "barbican-manage db upgrade" barbican
 
 
 
+yum install net-tools -y
 
-
-
+netstat -tulpn
 
 
 
