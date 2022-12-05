@@ -11,6 +11,9 @@ ssh -i ~/keyTest/foxconn-openstack_key.pem root@172.16.16.26
 ## 透過 net-002 進到network id 網域ssh 連線
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.4
 
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.6
+
+
 
 bash rocky_ssh.sh
 bash ~/deneil-dev/myRockyLinuxBarbican.sh
@@ -28,39 +31,36 @@ sudo su
 
 ## update 
 yum update -y
-dnf makecache --refresh
-dnf -y install arp-scan
-
 ```
 
 ## Disable `firewall`
 
-```bash
+<!-- ```bash
 sudo systemctl disable firewalld
 sudo systemctl stop firewalld
-```
-
-## Disable NetworkManager
-```bash
-sudo systemctl disable NetworkManager
-sudo systemctl stop NetworkManager
-```
+``` -->
 
 ## Install network-scripts package
 ```bash
 sudo dnf install network-scripts -y
 ```
 
+## Disable NetworkManager
+```bash
+sudo systemctl disable NetworkManager
+sudo systemctl stop NetworkManager
+sudo systemctl enable NetworkManager
+```
+
+
+<!-- 
 # Start Network Service
 ```bash
 sudo systemctl enable network
 sudo systemctl start network
-```
+``` -->
 
 ## Disable selinux
-- edited `/etc/selinux/config`
-
-
 ```bash
 sudo yum install nano vim -y
 vim /etc/selinux/config
@@ -112,6 +112,7 @@ yum install -y galera
 ```bash
 # sudo systemctl restart mariadb.service
 sudo systemctl start mariadb.service
+sudo systemctl enable mariadb.service
 ```
 
 ## 設定mysql 密碼
@@ -218,7 +219,8 @@ vim /etc/keystone/keystone.conf
 ```conf
 [database]
 # ...
-connection = mysql+pymysql://keystone:foxconn@192.168.77.17/keystone
+connection = mysql+pymysql://keystone:foxconn@192.168.77.6/keystone
+# connection = mysql+pymysql://keystone:foxconn@192.168.77.17/keystone
 # connection = mysql+pymysql://keystone:keystone_foxconn@192.168.19.41/keystone
 
 ...
@@ -243,10 +245,10 @@ keystone-manage credential_setup --keystone-user keystone --keystone-group keyst
 ## Bootstrap the Identity service:
 ```bash 
 keystone-manage bootstrap --bootstrap-password admin_foxconn \
-  --bootstrap-admin-url http://192.168.77.17:5000/v3/ \
-  --bootstrap-internal-url http://192.168.77.17:5000/v3/ \
-  --bootstrap-public-url http://192.168.77.17:5000/v3/ \
-  --bootstrap-region-id RegionOne
+--bootstrap-admin-url http://192.168.77.6:5000/v3/ \
+--bootstrap-internal-url http://192.168.77.6:5000/v3/ \
+--bootstrap-public-url http://192.168.77.6:5000/v3/ \
+--bootstrap-region-id RegionOne
 ```
 
 
@@ -270,24 +272,6 @@ APACHE_SERVERNAME="controller"
 ### Keystone apache2 conf
 vim /etc/httpd/conf.d/wsgi-keystone.conf 
 
-```conf
-Listen 5000
-
-<VirtualHost *:5000>
-    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
-    WSGIProcessGroup keystone-public
-    WSGIScriptAlias / /usr/bin/keystone-wsgi-public
-    WSGIApplicationGroup %{GLOBAL}
-    WSGIPassAuthorization On
-    ErrorLogFormat "%{cu}t %M"
-    ErrorLog /var/log/httpd/keystone.log
-    CustomLog /var/log/httpd/keystone_access.log combined
-
-    <Directory /usr/bin>
-        Require all granted
-    </Directory>
-</VirtualHost>
-```
 
 ```xml
 Listen 5000
@@ -308,51 +292,232 @@ Listen 5000
 </VirtualHost>
 ```
 
+```conf
+Listen 5000
 
+<VirtualHost *:5000>
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /usr/bin/keystone-wsgi-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    ErrorLogFormat "%{cu}t %M"
+    ErrorLog /var/log/keystone/keystone.log
+    CustomLog /var/log/keystone/keystone_access.log combined
+
+    <Directory /usr/bin>
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+ 
 
 ## keystone conf folder change right
+```bash
 chown -R keystone:keystone /etc/keystone
+```
 
 ## apache2 service start
 ```bash
 systemctl start httpd
 systemctl enable httpd
 systemctl restart httpd
-# systemctl status httpd
+systemctl status httpd
 ```
 
 
 ## 
 ```bash
 export OS_USERNAME=admin
-export OS_PASSWORD=foxconn
+export OS_PASSWORD=admin_foxconn
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://192.168.77.4:5000/v3
+export OS_AUTH_URL=http://192.168.77.6:5000/v3
 export OS_IDENTITY_API_VERSION=3
+```
+
+
+openstack endpoint list
+
+
+
+# -----------------------------------------
+# -----------------------------------------
+# -----------------------------------------
+
+## Barbican
+
+```
+mysql -uroot -pfoxconn
+```
+
+```SQL
+MariaDB [(none)]> CREATE DATABASE barbican;
+Query OK, 1 row affected (0.000 sec)
+
+MariaDB [(none)]> GRANT ALL PRIVILEGES ON barbican.* TO 'barbican'@'localhost' IDENTIFIED BY 'foxconn';
+Query OK, 0 rows affected (0.050 sec)
+
+MariaDB [(none)]> GRANT ALL PRIVILEGES ON barbican.* TO 'barbican'@'%' IDENTIFIED BY 'foxconn';
+Query OK, 0 rows affected (0.057 sec)
+
+MariaDB [(none)]> exit;
+Bye
+```
+
+# 建立barbican 使用者
+```bash
+source admin-openrc.sh
+```
+
+## Create the barbican user:
+```bash
+openstack user create --domain default --password-prompt barbican
+```
+## output
+```bash
+[root@deneil-barbican-test-keystone rocky]# openstack user create --domain default --password-prompt barbican
+User Password:
+Repeat User Password:
++---------------------+----------------------------------+
+| Field               | Value                            |
++---------------------+----------------------------------+
+| domain_id           | default                          |
+| enabled             | True                             |
+| id                  | d25644a6fafd4aafa31960aba8a439db |
+| name                | barbican                         |
+| options             | {}                               |
+| password_expires_at | None                             |
++---------------------+----------------------------------+
+```
+
+
+
+
+# Create a project name as service
+## 如果service project 已存在應該可忽略
+```bash
+openstack project create service
+```
+```bash
+[rocky@deneil-barbican-test-keystone ~]$ openstack project create service
++-------------+----------------------------------+
+| Field       | Value                            |
++-------------+----------------------------------+
+| description |                                  |
+| domain_id   | default                          |
+| enabled     | True                             |
+| id          | 35d4fb6e0f82458ba5bbabd67eec41f5 |
+| is_domain   | False                            |
+| name        | service                          |
+| options     | {}                               |
+| parent_id   | default                          |
+| tags        | []                               |
++-------------+----------------------------------+
 ```
 
 
 
 
 
+## Add the admin role to the barbican user:
+```bash
+openstack role add --project service --user barbican admin
+```
+
+## Create the creator role:
+```bash
+openstack role create creator
+```
+# output
+```bash
+[rocky@deneil-barbican-test-keystone ~]$ openstack role create creator
++-------------+----------------------------------+
+| Field       | Value                            |
++-------------+----------------------------------+
+| description | None                             |
+| domain_id   | None                             |
+| id          | 1924a588e17f4860b7ee79053ef465fe |
+| name        | creator                          |
+| options     | {}                               |
++-------------+----------------------------------+
+```
+
+
+## Add the creator role to the barbican user:
+```bash
+openstack role add --project service --user barbican creator
+```
+
+## Create the barbican service entities:
+```bash
+openstack service create --name barbican --description "Key Manager" key-manager
+```
+# output
+```bash
+[rocky@deneil-barbican-test-keystone ~]$ openstack service create --name barbican --description "Key Manager" key-manager
++-------------+----------------------------------+
+| Field       | Value                            |
++-------------+----------------------------------+
+| description | Key Manager                      |
+| enabled     | True                             |
+| id          | a664fad6157e4af6ba422a37df8a2d73 |
+| name        | barbican                         |
+| type        | key-manager                      |
++-------------+----------------------------------+
+```
 
 
 
+# Create the Key Manager service API endpoints:
+```bash
+openstack endpoint create --region RegionOne key-manager public http://192.168.77.8:9311
+openstack endpoint create --region RegionOne key-manager internal http://192.168.77.8:9311
+openstack endpoint create --region RegionOne key-manager admin http://192.168.77.8:9311
+
+```
+
+# Barbican installation
+```bash
+
+sudo yum install openstack-barbican-api openstack-barbican-keystone-listener openstack-barbican-worker -y
+
+```
+
+
+## Edit `/etc/barbican/barbican.conf`
+
+```bash
+vim /etc/barbican/barbican.conf
+```
 
 
 
+```conf
+[DEFAULT]
+...
+sql_connection = mysql+pymysql://barbican:foxconn@192.168.77.8/barbican
+...
 
+[DEFAULT]
+...
+transport_url = rabbit://openstack:RABBIT_PASS@192.168.77.8
+...
 
+[keystone_authtoken]
+...
+www_authenticate_uri = http://192.168.77.8:5000
+auth_url = http://192.168.77.8:5000
+memcached_servers = 192.168.77.8:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = barbican
+password = foxconn
 
-
-
-
-
-
-
-
+```
 
 
 
@@ -412,17 +577,5 @@ sudo systemctl enable rabbitmq-server.service
 sudo systemctl start rabbitmq-server.service
 
 
-<!-- 
-# Now is using Centos stream 9
-
-sudo dnf update -y
-sudo dnf config-manager --enable crb
-sudo dnf install -y centos-release-openstack-zed
-sudo setenforce 0
-sudo dnf update -y
-sudo dnf install -y openstack-packstack
-sudo packstack --allinone
-
- -->
 
 

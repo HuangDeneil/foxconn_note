@@ -62,6 +62,36 @@ openstack server create \
 deneil_rocky_instance-2 
 
 
+
+
+
+openstack server create \
+--flavor FiCo-v2m4-Q10 \
+--image 41af64d0-987b-4f58-ab92-759973b222a7 \
+--nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
+--security-group e3cdc39a-53f0-427a-8098-48785d2e7b4e \
+--key-name deneil_keypair \
+--user-data password-cloud-init \
+deneil_rocky_barbican_test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # CentOS-Stream-GenericCloud-9-20210830.0.x86_64.qcow2
 wget http://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20210830.0.x86_64.qcow2
 
@@ -523,3 +553,54 @@ openstack image create \
 --property release="true" \
 FICO-Win2k16-SPLA-test
 
+
+
+
+
+## FiXo CentOS
+openstack image save --file ./FICO-CentOS-7.9-2009-1.qcow2 94b57838-ee09-47f3-8c59-6f654005a3d3
+
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file FICO-CentOS-7.9-2009-1.qcow2 \
+--min-disk 20 \
+--min-ram 2048 \
+--property os_version="centos-7.9" \
+--property os_type="linux" \
+--property release="true" \
+--tag os_type=linux \
+--tag os_version=centos-7.9 \
+FICO-CentOS-7.9-2009-1-1
+
+# note : 
+## Metadata:
+--property  os_type="linux"        >>> 建image時能夠讀到
+--property os_version="centos-7.9" >>> 建image時能夠讀到
+--property release="true"          >>> 建image時能夠讀到
+
+## tag :
+--tag os_type=linux                >>> dashboard能夠讀到
+--tag os_version=centos-7.9        >>> dashboard能夠讀到
+
+
+# Rocky-9-GenericCloud.latest.x86_64.qcow2
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file Rocky-9-GenericCloud.latest.x86_64.qcow2 \
+--min-disk 40 \
+--min-ram 2048 \
+--property os_type="linux" \
+--property os_version="Rocky_linux-9.0" \
+--property release="true" \
+--tag os_type=linux \
+--tag os_version=Rocky_linux-9.0 \
+FICO-Rocky-linux-9.0
+
+
+
+os_type='linux', os_version='centos-8.3', release='True'
+os_type=linux, os_version=centos-8.3 
