@@ -18,6 +18,7 @@ sudo dnf install network-scripts -y
 ## Disable NetworkManager
 sudo systemctl disable NetworkManager
 sudo systemctl stop NetworkManager
+sudo systemctl enable NetworkManager
 
 
 ## download rpm file
@@ -153,6 +154,23 @@ keystone-manage bootstrap --bootstrap-password admin_foxconn \
 ```
 
 
+```bash 
+keystone-manage bootstrap --bootstrap-password admin_foxconn \
+--bootstrap-admin-url http://192.168.66.29:5000/v3/ \
+--bootstrap-internal-url http://192.168.66.29:5000/v3/ \
+--bootstrap-public-url http://192.168.66.29:5000/v3/ \
+--bootstrap-region-id RegionOne
+```
+
+```bash 
+keystone-manage bootstrap --bootstrap-password admin_foxconn \
+--bootstrap-admin-url http://192.168.66.26:5000/v3/ \
+--bootstrap-internal-url http://192.168.66.26:5000/v3/ \
+--bootstrap-public-url http://192.168.66.26:5000/v3/ \
+--bootstrap-region-id RegionOne
+```
+
+
 
 
 
@@ -208,7 +226,7 @@ export OS_PASSWORD=admin_foxconn
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://192.168.77.8:5000/v3
+export OS_AUTH_URL=http://192.168.66.29:5000/v3
 export OS_IDENTITY_API_VERSION=3
 " > admin-openrc.sh
 

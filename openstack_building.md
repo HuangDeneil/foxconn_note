@@ -9,11 +9,19 @@ ip netns exec qdhcp-cb807b61-8351-41fa-a635-add24dc7612f ssh -i Ubuntu20_key.pem
 ssh -i ~/keyTest/foxconn-openstack_key.pem root@172.16.16.26
 
 ## 透過 net-002 進到network id 網域ssh 連線
+# KH-testBed.Q
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.4
-
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.6
 
+# KH-testBed.L
+ssh -i ~/.ssh/foxconn-openstack_key.pem root@172.16.16.33
 
+## deneil-rocky-test-keystone
+ip netns exec qdhcp-fca993fc-fc6f-42b5-82a6-35220a3e6715 ssh -i ~/hu.deneil-dev/Ubuntu20_key.pem rocky@192.168.66.29
+## deneil_rocky_linux_barbican
+ip netns exec qdhcp-fca993fc-fc6f-42b5-82a6-35220a3e6715 ssh -i ~/hu.deneil-dev/Ubuntu20_key.pem rocky@192.168.66.28
+## deneil_rocky_linux_9
+ip netns exec qdhcp-fca993fc-fc6f-42b5-82a6-35220a3e6715 ssh -i ~/hu.deneil-dev/Ubuntu20_key.pem rocky@192.168.66.26
 
 bash rocky_ssh.sh
 bash ~/deneil-dev/myRockyLinuxBarbican.sh
@@ -43,6 +51,7 @@ sudo systemctl stop firewalld
 ## Install network-scripts package
 ```bash
 sudo dnf install network-scripts -y
+sudo yum install net-tools -y
 ```
 
 ## Disable NetworkManager
@@ -104,8 +113,8 @@ rpm -qf /usr/bin/openstack
 # mariadb install
 ```bash
 yum install -y mariadb-server
-yum install -y socat 
-yum install -y galera 
+# yum install -y socat 
+# yum install -y galera 
 ```
 
 # mariadb servie restart
@@ -272,25 +281,6 @@ APACHE_SERVERNAME="controller"
 ### Keystone apache2 conf
 vim /etc/httpd/conf.d/wsgi-keystone.conf 
 
-
-```xml
-Listen 5000
-
-<VirtualHost *:5000>
-    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
-    WSGIProcessGroup keystone-public
-    WSGIScriptAlias / /usr/bin/keystone-wsgi-public
-    WSGIApplicationGroup %{GLOBAL}
-    WSGIPassAuthorization On
-    ErrorLogFormat "%{cu}t %M"
-    ErrorLog /var/log/apache2/keystone.log
-    CustomLog /var/log/apache2/keystone_access.log combined
-
-    <Directory /usr/bin>
-        Require all granted
-    </Directory>
-</VirtualHost>
-```
 
 ```conf
 Listen 5000
@@ -613,9 +603,9 @@ openstack service create --name barbican --description "Key Manager" key-manager
 
 # Create the Key Manager service API endpoints:
 ```bash
-openstack endpoint create --region RegionOne key-manager public http://192.168.77.8:9311
-openstack endpoint create --region RegionOne key-manager internal http://192.168.77.8:9311
-openstack endpoint create --region RegionOne key-manager admin http://192.168.77.8:9311
+openstack endpoint create --region RegionOne key-manager public http://192.168.66.26:9311
+openstack endpoint create --region RegionOne key-manager internal http://192.168.66.26:9311
+openstack endpoint create --region RegionOne key-manager admin http://192.168.66.26:9311
 
 ```
 
@@ -638,25 +628,25 @@ vim /etc/barbican/barbican.conf
 ```conf
 [DEFAULT]
 ...
-sql_connection = mysql+pymysql://barbican:foxconn@192.168.77.8/barbican
+sql_connection = mysql+pymysql://barbican:foxconn@192.168.66.26/barbican
 ...
 
 [DEFAULT]
 ...
-transport_url = rabbit://openstack:RABBIT_PASS@192.168.77.8
+transport_url = rabbit://openstack:RABBIT_PASS@192.168.66.27
 ...
 
 [keystone_authtoken]
 ...
-www_authenticate_uri = http://192.168.77.8:5000
-auth_url = http://192.168.77.8:5000
-memcached_servers = 192.168.77.8:11211
+www_authenticate_uri = http://192.168.66.26:5000
+auth_url = http://192.168.66.26:5000
+memcached_servers = 192.168.66.26:11211
 auth_type = password
 project_domain_name = default
 user_domain_name = default
 project_name = service
 username = barbican
-password = admin_foxconn
+password = foxconn
 
 ```
 
@@ -732,6 +722,14 @@ openstack secret list
 
 
 ## Error message
+```bash
+[rocky@deneil-rocky-linux-9 ~]$ openstack secret list
+Failed to contact the endpoint at http://192.168.66.26:9311 for discovery. Fallback to using that endpoint as the base url.
+Unable to establish connection to http://192.168.66.26:9311/secrets: HTTPConnectionPool(host='192.168.66.26', port=9311): Max retries exceeded with url: /secrets?limit=10&offset=0 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f740b9c51c0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+```
+
+
 ```bash
 [root@deneil-barbican-test-keystone conf.d]# openstack secret list
 Failed to contact the endpoint at http://192.168.77.8:9311 for discovery. Fallback to using that endpoint as the base url.
