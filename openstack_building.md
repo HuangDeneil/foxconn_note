@@ -1,32 +1,29 @@
 
 
 # 其他連線方式 使用net-001上面用ip netns exec 直接ssh 進入同往段的機器
+```bash
 ip netns exec qdhcp-<OPSTK network_id> ssh -i <key.pem> <user>@<ip>
 
+# example
 ip netns exec qdhcp-cb807b61-8351-41fa-a635-add24dc7612f ssh -i Ubuntu20_key.pem rocky@192.168.66.10
+```
 
+# KH-testBed.Q
+```bash
 ## 連線至net-002
 ssh -i ~/.ssh/foxconn-openstack_key.pem root@172.16.16.26
 
-
 ## 透過 net-002 進到network id 網域ssh 連線
-# KH-testBed.Q
 ## Ubuntu
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem ubuntu@192.168.77.16
 ## deneil_rocky_barbican_test
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.9
 ## deneil_rocky_keystone_test
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.27
-
-
-
-
-
-
-
-
+```
 
 # KH-testBed.L
+```bash
 ssh -i ~/.ssh/foxconn-openstack_key.pem root@172.16.16.33
 
 ## deneil-rocky-test-keystone
@@ -38,40 +35,40 @@ ip netns exec qdhcp-fca993fc-fc6f-42b5-82a6-35220a3e6715 ssh -i ~/hu.deneil-dev/
 
 bash rocky_ssh.sh
 bash ~/deneil-dev/myRockyLinuxBarbican.sh
-
-# Rocky linux 9
-
+```
 ---
-
-export LANG=en_US.UTF-8
-export LANGUAGE=en_US.UTF-8
-
+# Work on Rocky linux 9
+---
 
 ```bash
 sudo su
 
 ## update 
 yum update -y
+
+# install editor
+sudo yum install nano vim -y
 ```
 
-## Disable `firewall`
-
+## Disable `firewall` 
+note : rocky linux default not installed
 <!-- ```bash
 sudo systemctl disable firewalld
 sudo systemctl stop firewalld
 ``` -->
 
-
 ## Disable NetworkManager
 ```bash
-sudo systemctl disable NetworkManager
+# sudo systemctl disable NetworkManager
 sudo systemctl stop NetworkManager
-sudo systemctl enable NetworkManager
+sudo systemctl enable NetworkManager    ## if not enable，ip 可能會拿不到必須用console vnc進去restart
 ```
 
 ## Install network-scripts package
 ```bash
-dnf install network-scripts -y
+sudo dnf install network-scripts -y
+
+## 其他工具 (optional)
 sudo yum install net-tools -y
 ```
 
@@ -84,9 +81,14 @@ sudo systemctl start network
 
 ## Disable selinux
 ```bash
-sudo yum install nano vim -y
+sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/sysconfig/selinux
+```
+
+## 等同於用editor 進去手動修
+```bash
 vim /etc/selinux/config
 ```
+`/etc/selinux/config` 內容
 ```conf
 ...
 SELINUX=disabled
@@ -99,6 +101,7 @@ SELINUXTYPE=targeted
 sudo yum install chrony
 ``` -->
 
+---
 
 ## install openstack zed version
 ```bash
@@ -123,14 +126,14 @@ rpm -qf /usr/bin/openstack
 
 ```
 
-# mariadb install
+## mariadb install
 ```bash
 yum install -y mariadb-server
 # yum install -y socat 
 # yum install -y galera 
 ```
 
-# mariadb servie restart
+## mariadb servie restart
 ```bash
 # sudo systemctl restart mariadb.service
 sudo systemctl start mariadb.service
@@ -141,76 +144,23 @@ sudo systemctl enable mariadb.service
 mysql_secure_installation 
 
 ```bash
-[root@deneil-barbican-rock-test rocky]# mysql_secure_installation
-
-NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
-      SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
-
-In order to log into MariaDB to secure it, we'll need the current
-password for the root user. If you've just installed MariaDB, and
-haven't set the root password yet, you should just press enter here.
-
-Enter current password for root (enter for none): 
-OK, successfully used password, moving on...
-
-Setting the root password or using the unix_socket ensures that nobody
-can log into the MariaDB root user without the proper authorisation.
-
-You already have your root account protected, so you can safely answer 'n'.
-
+ ...
 Switch to unix_socket authentication [Y/n] y
-Enabled successfully!
-Reloading privilege tables..
- ... Success!
-
-
+ ...
 You already have your root account protected, so you can safely answer 'n'.
-
+ ...
 Change the root password? [Y/n] y
 New password: 
 Re-enter new password:
-Password updated successfully!
-Reloading privilege tables..
- ... Success!
-
-
-By default, a MariaDB installation has an anonymous user, allowing anyone
-to log into MariaDB without having to have a user account created for
-them.  This is intended only for testing, and to make the installation
-go a bit smoother.  You should remove them before moving into a
-production environment.
-
+ ...
 Remove anonymous users? [Y/n] y
- ... Success!
-
-Normally, root should only be allowed to connect from 'localhost'.  This
-ensures that someone cannot guess at the root password from the network.
-
+ ... 
 Disallow root login remotely? [Y/n] n
- ... skipping.
-
-By default, MariaDB comes with a database named 'test' that anyone can
-access.  This is also intended only for testing, and should be removed
-before moving into a production environment.
-
+ ... 
 Remove test database and access to it? [Y/n] y
- - Dropping test database...
- ... Success!
- - Removing privileges on test database...
- ... Success!
-
-Reloading the privilege tables will ensure that all changes made so far
-will take effect immediately.
-
+ ...
 Reload privilege tables now? [Y/n] y
- ... Success!
-
-Cleaning up...
-
-All done!  If you've completed all of the above steps, your MariaDB
-installation should now be secure.
-
-Thanks for using MariaDB!
+ ... 
 ```
 
 ## keystone mysql database
@@ -242,9 +192,6 @@ vim /etc/keystone/keystone.conf
 [database]
 # ...
 connection = mysql+pymysql://keystone:foxconn@192.168.77.27/keystone
-; connection = mysql+pymysql://keystone:foxconn@192.168.77.6/keystone
-# connection = mysql+pymysql://keystone:foxconn@192.168.77.17/keystone
-# connection = mysql+pymysql://keystone:keystone_foxconn@192.168.19.41/keystone
 
 ...
 
@@ -256,8 +203,9 @@ provider = fernet
 ```
 
 ## Populate the Identity service database:
+```bash
 su -s /bin/sh -c "keystone-manage db_sync" keystone
-
+```
 
 # Initialize Fernet key repositories:
 ```bash
@@ -274,10 +222,7 @@ keystone-manage bootstrap --bootstrap-password admin_foxconn \
 --bootstrap-region-id RegionOne
 ```
 
-
-### ###################################################################
 --------------------------------
-
 
 
 # Configure the Apache HTTP server
@@ -293,9 +238,9 @@ APACHE_SERVERNAME="controller"
 -->
 
 ### Keystone apache2 conf
+```bash
 vim /etc/httpd/conf.d/wsgi-keystone.conf 
-
-
+```
 ```conf
 Listen 5000
 
@@ -330,20 +275,23 @@ systemctl status httpd
 ```
 
 
-## 
+## admin-openrc.sh openstack admin
 ```bash
+echo -e "
 export OS_USERNAME=admin
 export OS_PASSWORD=admin_foxconn
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://192.168.77.6:5000/v3
+export OS_AUTH_URL=http://192.168.77.27:5000/v3
 export OS_IDENTITY_API_VERSION=3
+" > admin-openrc.sh
 ```
 
-
+### 測試keystone 是否成功
+```bash
 openstack endpoint list
-
+```
 
 
 # ----------------------------------------------------------
