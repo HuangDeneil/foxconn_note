@@ -19,6 +19,7 @@ sudo dnf install network-scripts -y
 sudo systemctl disable NetworkManager
 sudo systemctl stop NetworkManager
 sudo systemctl enable NetworkManager
+sudo systemctl restart NetworkManager
 
 
 ## download rpm file
@@ -31,6 +32,7 @@ yum install python3-openstackclient -y
 
 ## Disable selinux
 ```bash
+sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/sysconfig/selinux
 vim /etc/selinux/config
 ```
 ```conf
@@ -118,8 +120,9 @@ vim /etc/keystone/keystone.conf
 ```conf
 [database]
 # ...
-connection = mysql+pymysql://keystone:foxconn@192.168.77.8/keystone
-; connection = mysql+pymysql://keystone:foxconn@192.168.77.6/keystone
+connection = mysql+pymysql://keystone:foxconn@192.168.77.27/keystone
+# connection = mysql+pymysql://keystone:foxconn@192.168.77.8/keystone
+# connection = mysql+pymysql://keystone:foxconn@192.168.77.6/keystone
 # connection = mysql+pymysql://keystone:foxconn@192.168.77.17/keystone
 # connection = mysql+pymysql://keystone:keystone_foxconn@192.168.19.41/keystone
 
@@ -147,26 +150,9 @@ keystone-manage credential_setup --keystone-user keystone --keystone-group keyst
 ## Bootstrap the Identity service:
 ```bash 
 keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://192.168.77.8:5000/v3/ \
---bootstrap-internal-url http://192.168.77.8:5000/v3/ \
---bootstrap-public-url http://192.168.77.8:5000/v3/ \
---bootstrap-region-id RegionOne
-```
-
-
-```bash 
-keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://192.168.66.29:5000/v3/ \
---bootstrap-internal-url http://192.168.66.29:5000/v3/ \
---bootstrap-public-url http://192.168.66.29:5000/v3/ \
---bootstrap-region-id RegionOne
-```
-
-```bash 
-keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://192.168.66.26:5000/v3/ \
---bootstrap-internal-url http://192.168.66.26:5000/v3/ \
---bootstrap-public-url http://192.168.66.26:5000/v3/ \
+--bootstrap-admin-url http://192.168.77.27:5000/v3/ \
+--bootstrap-internal-url http://192.168.77.27:5000/v3/ \
+--bootstrap-public-url http://192.168.77.27:5000/v3/ \
 --bootstrap-region-id RegionOne
 ```
 
@@ -226,7 +212,7 @@ export OS_PASSWORD=admin_foxconn
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://192.168.66.29:5000/v3
+export OS_AUTH_URL=http://192.168.77.27:5000/v3
 export OS_IDENTITY_API_VERSION=3
 " > admin-openrc.sh
 

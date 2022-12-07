@@ -96,7 +96,7 @@ deneil_rocky_instance-2
 
 
 openstack server create \
---flavor FiCo-v2m4-Q10 \
+--flavor FiCo-v4m8-Q5 \
 --image 41af64d0-987b-4f58-ab92-759973b222a7 \
 --nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
 --security-group e3cdc39a-53f0-427a-8098-48785d2e7b4e \

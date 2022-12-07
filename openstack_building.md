@@ -6,12 +6,25 @@ ip netns exec qdhcp-<OPSTK network_id> ssh -i <key.pem> <user>@<ip>
 ip netns exec qdhcp-cb807b61-8351-41fa-a635-add24dc7612f ssh -i Ubuntu20_key.pem rocky@192.168.66.10
 
 ## 連線至net-002
-ssh -i ~/keyTest/foxconn-openstack_key.pem root@172.16.16.26
+ssh -i ~/.ssh/foxconn-openstack_key.pem root@172.16.16.26
+
 
 ## 透過 net-002 進到network id 網域ssh 連線
 # KH-testBed.Q
-ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.4
-ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.6
+## Ubuntu
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem ubuntu@192.168.77.16
+## deneil_rocky_barbican_test
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.9
+## deneil_rocky_keystone_test
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.27
+
+
+
+
+
+
+
+
 
 # KH-testBed.L
 ssh -i ~/.ssh/foxconn-openstack_key.pem root@172.16.16.33
@@ -48,11 +61,6 @@ sudo systemctl disable firewalld
 sudo systemctl stop firewalld
 ``` -->
 
-## Install network-scripts package
-```bash
-sudo dnf install network-scripts -y
-sudo yum install net-tools -y
-```
 
 ## Disable NetworkManager
 ```bash
@@ -61,6 +69,11 @@ sudo systemctl stop NetworkManager
 sudo systemctl enable NetworkManager
 ```
 
+## Install network-scripts package
+```bash
+dnf install network-scripts -y
+sudo yum install net-tools -y
+```
 
 <!-- 
 # Start Network Service
@@ -80,11 +93,11 @@ SELINUX=disabled
 ...
 SELINUXTYPE=targeted
 ```
-
+<!-- 
 ## 時間配置
 ```bash
 sudo yum install chrony
-```
+``` -->
 
 
 ## install openstack zed version
@@ -220,7 +233,7 @@ Query OK, 0 rows affected (0.00 sec)
 
 
 ## install keystone
-dnf install openstack-keystone httpd python3-mod_wsgi -y
+dnf install openstack-keystone httpd python3-mod_wsgi memcached -y
 
 
 vim /etc/keystone/keystone.conf
@@ -228,7 +241,8 @@ vim /etc/keystone/keystone.conf
 ```conf
 [database]
 # ...
-connection = mysql+pymysql://keystone:foxconn@192.168.77.6/keystone
+connection = mysql+pymysql://keystone:foxconn@192.168.77.27/keystone
+; connection = mysql+pymysql://keystone:foxconn@192.168.77.6/keystone
 # connection = mysql+pymysql://keystone:foxconn@192.168.77.17/keystone
 # connection = mysql+pymysql://keystone:keystone_foxconn@192.168.19.41/keystone
 
@@ -254,9 +268,9 @@ keystone-manage credential_setup --keystone-user keystone --keystone-group keyst
 ## Bootstrap the Identity service:
 ```bash 
 keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://192.168.77.6:5000/v3/ \
---bootstrap-internal-url http://192.168.77.6:5000/v3/ \
---bootstrap-public-url http://192.168.77.6:5000/v3/ \
+--bootstrap-admin-url http://192.168.77.27:5000/v3/ \
+--bootstrap-internal-url http://192.168.77.27:5000/v3/ \
+--bootstrap-public-url http://192.168.77.27:5000/v3/ \
 --bootstrap-region-id RegionOne
 ```
 
@@ -354,6 +368,8 @@ nano /etc/rabbitmq/rabbitmq.conf
 ```bash
 sudo systemctl enable rabbitmq-server.service
 sudo systemctl start rabbitmq-server.service
+sudo systemctl restart rabbitmq-server.service
+sudo systemctl status rabbitmq-server.service
 
 ```
 
@@ -368,7 +384,7 @@ sudo chmod 400 /var/lib/rabbitmq/.erlang.cookie
 ## 在其他節點中加入controller控制
 ```bash
 rabbitmqctl stop_app
-rabbitmqctl join_cluster rabbit@control1
+rabbitmqctl join_cluster rabbit@deneil-rocky-keystone-test
 rabbitmqctl start_app
 rabbitmqctl rabbitmqctl cluter_status
 systemctl restart rabbitmq-server.service
@@ -509,8 +525,8 @@ openstack user create --domain default --password-prompt barbican
 ## output
 ```bash
 [root@deneil-barbican-test-keystone rocky]# openstack user create --domain default --password-prompt barbican
-User Password:
-Repeat User Password:
+User Password: admin_foxconn
+Repeat User Password: admin_foxconn
 +---------------------+----------------------------------+
 | Field               | Value                            |
 +---------------------+----------------------------------+
@@ -603,9 +619,9 @@ openstack service create --name barbican --description "Key Manager" key-manager
 
 # Create the Key Manager service API endpoints:
 ```bash
-openstack endpoint create --region RegionOne key-manager public http://192.168.66.26:9311
-openstack endpoint create --region RegionOne key-manager internal http://192.168.66.26:9311
-openstack endpoint create --region RegionOne key-manager admin http://192.168.66.26:9311
+openstack endpoint create --region RegionOne key-manager public http://192.168.100.11:9311
+openstack endpoint create --region RegionOne key-manager internal http://192.168.100.11:9311
+openstack endpoint create --region RegionOne key-manager admin http://192.168.100.11:9311
 
 ```
 
@@ -623,30 +639,28 @@ sudo yum install openstack-barbican-api openstack-barbican-keystone-listener ope
 vim /etc/barbican/barbican.conf
 ```
 
-
-
 ```conf
 [DEFAULT]
 ...
-sql_connection = mysql+pymysql://barbican:foxconn@192.168.66.26/barbican
+sql_connection = mysql+pymysql://barbican:foxconn@192.168.100.11/barbican
 ...
 
 [DEFAULT]
 ...
-transport_url = rabbit://openstack:RABBIT_PASS@192.168.66.27
+transport_url = rabbit://openstack:foxconn@192.168.100.11
 ...
 
 [keystone_authtoken]
 ...
-www_authenticate_uri = http://192.168.66.26:5000
-auth_url = http://192.168.66.26:5000
-memcached_servers = 192.168.66.26:11211
+www_authenticate_uri = http://192.168.77.27:5000
+auth_url = http://192.168.77.27:5000
+memcached_servers = 192.168.77.27:11211
 auth_type = password
 project_domain_name = default
 user_domain_name = default
 project_name = service
 username = barbican
-password = foxconn
+password = admin_foxconn
 
 ```
 
@@ -663,31 +677,8 @@ su -s /bin/sh -c "barbican-manage db upgrade" barbican
 vim /etc/httpd/conf.d/wsgi-barbican.conf
 ```
 
-
-
-
 ```xml
 <VirtualHost [::1]:9311>
-    ServerName controller
-
-    ## Logging
-    ErrorLog "/var/log/httpd/barbican_wsgi_main_error_ssl.log"
-    LogLevel debug
-    ServerSignature Off
-    CustomLog "/var/log/httpd/barbican_wsgi_main_access_ssl.log" combined
-
-    WSGIApplicationGroup %{GLOBAL}
-    WSGIDaemonProcess barbican-api display-name=barbican-api group=barbican processes=2 threads=8 user=barbican
-    WSGIProcessGroup barbican-api
-    WSGIScriptAlias / "/usr/lib/python2.7/site-packages/barbican/api/app.wsgi"
-    WSGIPassAuthorization On
-</VirtualHost>
-```
-
-
-```xml
-Listen 9311
-<VirtualHost 192.168.77.8:9311>
     ServerName controller
 
     ## Logging
@@ -710,9 +701,6 @@ Listen 9311
 systemctl restart httpd
 ```
 
-
-
-
 ### Test barbican
 ```bash
 openstack endpoint list
@@ -723,20 +711,23 @@ openstack secret list
 
 ## Error message
 ```bash
-[rocky@deneil-rocky-linux-9 ~]$ openstack secret list
-Failed to contact the endpoint at http://192.168.66.26:9311 for discovery. Fallback to using that endpoint as the base url.
-Unable to establish connection to http://192.168.66.26:9311/secrets: HTTPConnectionPool(host='192.168.66.26', port=9311): Max retries exceeded with url: /secrets?limit=10&offset=0 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f740b9c51c0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+[root@deneil-rocky-keystone-test rocky]# openstack secret list
+Failed to contact the endpoint at http://192.168.100.11:9311 for discovery. 
+Fallback to using that endpoint as the base url.
+Unable to establish connection to http://192.168.100.11:9311/secrets: HTTPConnectionPool(host='192.168.100.11', port=9311): Max retries exceeded with url: /secrets?limit=10&offset=0 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7ff184e9e100>: Failed to establish a new connection: [Errno 111] Connection refused'))
 
 ```
 
 
-```bash
-[root@deneil-barbican-test-keystone conf.d]# openstack secret list
-Failed to contact the endpoint at http://192.168.77.8:9311 for discovery. Fallback to using that endpoint as the base url.
-4xx Client error: b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>403 Forbidden</title>\n</head><body>\n<h1>Forbidden</h1>\n<p>You don\'t have permission to access this resource.</p>\n</body></html>\n'
-b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>403 Forbidden</title>\n</head><body>\n<h1>Forbidden</h1>\n<p>You don\'t have 
-permission to access this resource.</p>\n</body></html>\n'
+vim /etc/httpd/conf.d/wsgi-barbican.conf
+新增 `Listen 9311` ，再 `systemctl restart httpd` 之後
 
+```bash
+[root@deneil-rocky-keystone-test rocky]# openstack secret list
+Failed to contact the endpoint at http://192.168.100.11:9311 for discovery. 
+Fallback to using that endpoint as the base url.
+4xx Client error: b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n</body></html>\n'    
+b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n</body></html>\n'
 ```
 
 
@@ -770,45 +761,6 @@ permission to access this resource.</p>\n</body></html>\n'
 yum install net-tools -y
 
 netstat -tulpn
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
