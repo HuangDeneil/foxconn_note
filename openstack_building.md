@@ -20,6 +20,14 @@ ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubu
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.9
 ## deneil_rocky_keystone_test
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.27
+
+
+## deneil_rocky_barbican_test-3
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.5
+
+
+## deneil_rocky_barbican_test-cloud-init
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.10
 ```
 
 # KH-testBed.L
@@ -49,10 +57,10 @@ yum update -y
 # install editor
 sudo yum install nano vim -y
 ```
-
+<!--
 ## Disable `firewall` 
 note : rocky linux default not installed
-<!-- ```bash
+ ```bash
 sudo systemctl disable firewalld
 sudo systemctl stop firewalld
 ``` -->
@@ -61,7 +69,7 @@ sudo systemctl stop firewalld
 ```bash
 # sudo systemctl disable NetworkManager
 sudo systemctl stop NetworkManager
-sudo systemctl enable NetworkManager    ## if not enable，ip 可能會拿不到必須用console vnc進去restart
+sudo systemctl enable NetworkManager    ## if not enable，root後ip可能會拿不到必須用console vnc進去手動restart
 ```
 
 ## Install network-scripts package
@@ -81,7 +89,7 @@ sudo systemctl start network
 
 ## Disable selinux
 ```bash
-sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/sysconfig/selinux
+sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/selinux/config
 ```
 
 ## 等同於用editor 進去手動修
@@ -141,7 +149,9 @@ sudo systemctl enable mariadb.service
 ```
 
 ## 設定mysql 密碼
+```bash
 mysql_secure_installation 
+```
 
 ```bash
  ...
@@ -165,7 +175,7 @@ Reload privilege tables now? [Y/n] y
 
 ## keystone mysql database
 ```bash
-[root@deneil-barbican-rock-test rocky]# mysql -uroot -pfoxconn
+mysql -uroot -pfoxconn
 ```
 ```SQL
 -- 建立keystone database
@@ -179,19 +189,27 @@ Query OK, 0 rows affected (0.00 sec)
 -- 設定從任意ip可用keystone 身分登錄
 MariaDB [(none)]> grant all privileges on keystone.* to 'keystone'@'%' identified by 'foxconn';
 Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> exit
+Bye
 ```
 
 
 ## install keystone
+```bash
 dnf install openstack-keystone httpd python3-mod_wsgi memcached -y
 
+```
 
+
+```bash
+## Edit keystone.conf
 vim /etc/keystone/keystone.conf
-
+```
 ```conf
 [database]
 # ...
-connection = mysql+pymysql://keystone:foxconn@192.168.77.27/keystone
+connection = mysql+pymysql://keystone:foxconn@127.0.0.1/keystone
 
 ...
 
@@ -216,9 +234,9 @@ keystone-manage credential_setup --keystone-user keystone --keystone-group keyst
 ## Bootstrap the Identity service:
 ```bash 
 keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://192.168.77.27:5000/v3/ \
---bootstrap-internal-url http://192.168.77.27:5000/v3/ \
---bootstrap-public-url http://192.168.77.27:5000/v3/ \
+--bootstrap-admin-url http://127.0.0.1:5000/v3/ \
+--bootstrap-internal-url http://127.0.0.1:5000/v3/ \
+--bootstrap-public-url http://127.0.0.1:5000/v3/ \
 --bootstrap-region-id RegionOne
 ```
 
@@ -251,8 +269,8 @@ Listen 5000
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     ErrorLogFormat "%{cu}t %M"
-    ErrorLog /var/log/keystone/keystone.log
-    CustomLog /var/log/keystone/keystone_access.log combined
+    ErrorLog /var/log/httpd/keystone.log
+    CustomLog /var/log/httpd/keystone_access.log combined
 
     <Directory /usr/bin>
         Require all granted
@@ -270,8 +288,8 @@ chown -R keystone:keystone /etc/keystone
 ```bash
 systemctl start httpd
 systemctl enable httpd
-systemctl restart httpd
-systemctl status httpd
+# systemctl restart httpd
+# systemctl status httpd
 ```
 
 
@@ -283,13 +301,14 @@ export OS_PASSWORD=admin_foxconn
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://192.168.77.27:5000/v3
+export OS_AUTH_URL=http://127.0.0.1:5000/v3
 export OS_IDENTITY_API_VERSION=3
 " > admin-openrc.sh
 ```
 
 ### 測試keystone 是否成功
 ```bash
+. admin-openrc.sh
 openstack endpoint list
 ```
 
@@ -316,8 +335,8 @@ nano /etc/rabbitmq/rabbitmq.conf
 ```bash
 sudo systemctl enable rabbitmq-server.service
 sudo systemctl start rabbitmq-server.service
-sudo systemctl restart rabbitmq-server.service
-sudo systemctl status rabbitmq-server.service
+# sudo systemctl restart rabbitmq-server.service
+# sudo systemctl status rabbitmq-server.service
 
 ```
 
@@ -567,9 +586,9 @@ openstack service create --name barbican --description "Key Manager" key-manager
 
 # Create the Key Manager service API endpoints:
 ```bash
-openstack endpoint create --region RegionOne key-manager public http://192.168.100.11:9311
-openstack endpoint create --region RegionOne key-manager internal http://192.168.100.11:9311
-openstack endpoint create --region RegionOne key-manager admin http://192.168.100.11:9311
+openstack endpoint create --region RegionOne key-manager public http://127.0.0.1:9311
+openstack endpoint create --region RegionOne key-manager internal http://127.0.0.1:9311
+openstack endpoint create --region RegionOne key-manager admin http://127.0.0.1:9311
 
 ```
 
@@ -590,25 +609,39 @@ vim /etc/barbican/barbican.conf
 ```conf
 [DEFAULT]
 ...
-sql_connection = mysql+pymysql://barbican:foxconn@192.168.100.11/barbican
+sql_connection = mysql+pymysql://barbican:foxconn@127.0.0.1/barbican
 ...
 
 [DEFAULT]
 ...
-transport_url = rabbit://openstack:foxconn@192.168.100.11
+transport_url = rabbit://openstack:foxconn@127.0.0.1
 ...
 
 [keystone_authtoken]
 ...
-www_authenticate_uri = http://192.168.77.27:5000
-auth_url = http://192.168.77.27:5000
-memcached_servers = 192.168.77.27:11211
+www_authenticate_uri = http://127.0.0.1:5000
+auth_url = http://127.0.0.1:5000
+memcached_servers = 127.0.0.1:11211
 auth_type = password
 project_domain_name = default
 user_domain_name = default
 project_name = service
 username = barbican
 password = admin_foxconn
+
+# ================= Secret Store Plugin ===================
+[secretstore]
+..
+enabled_secretstore_plugins = store_crypto
+# ================= Crypto plugin ===================
+[crypto]
+..
+enabled_crypto_plugins = simple_crypto
+
+[simple_crypto_plugin]
+# the kek should be a 32-byte value which is base64 encoded
+kek = 'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY='
+
 
 ```
 
@@ -647,14 +680,57 @@ vim /etc/httpd/conf.d/wsgi-barbican.conf
 # restart httpd
 ```bash
 systemctl restart httpd
+systemctl restart httpd.service
+```
+
+```bash
+systemctl enable --now openstack-barbican-api
+systemctl start --now openstack-barbican-api
 ```
 
 ### Test barbican
 ```bash
 openstack endpoint list
 openstack secret list
-
+openstack secret store --name mysecret --payload j4=]d21
 ```
+
+
+## 
+```bash
+[root@deneil-rocky-barbican-test-3 rocky]# openstack secret store --name mysecret --payload j4=]d21
++---------------+-----------------------------------------------------------------------+
+| Field         | Value                                                                 |
++---------------+-----------------------------------------------------------------------+
+| Secret href   | http://localhost:9311/v1/secrets/278c96a3-2e21-4bd7-88b6-cf3bac689b74 |
+| Name          | mysecret                                                              |
+| Created       | None                                                                  |
+| Status        | None                                                                  |
+| Content types | None                                                                  |
+| Algorithm     | aes                                                                   |
+| Bit length    | 256                                                                   |
+| Secret type   | opaque                                                                |
+| Mode          | cbc                                                                   |
+| Expiration    | None                                                                  |
++---------------+-----------------------------------------------------------------------+
+[root@deneil-rocky-barbican-test-3 rocky]# openstack secret list
++-----------------------------------------------------------------------+----------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
+| Secret href                                                           | Name     | Created                   | Status | Content types  
+                         | Algorithm | Bit length | Secret type | Mode | Expiration |
++-----------------------------------------------------------------------+----------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
+| http://localhost:9311/v1/secrets/278c96a3-2e21-4bd7-88b6-cf3bac689b74 | mysecret | 2022-12-09T08:57:39+00:00 | ACTIVE | {'default': 'application/octet-stream'} | aes       |        256 | opaque      | cbc  | None       |
++-----------------------------------------------------------------------+----------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
+```
+
+
+
+
+
+
+
+
+
+
 
 
 ## Error message
