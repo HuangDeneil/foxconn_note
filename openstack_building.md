@@ -691,8 +691,8 @@ systemctl start --now openstack-barbican-api
 ### Test barbican
 ```bash
 openstack endpoint list
-openstack secret list
 openstack secret store --name mysecret --payload j4=]d21
+openstack secret list
 ```
 
 

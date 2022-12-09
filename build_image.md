@@ -112,7 +112,21 @@ openstack server create \
 --security-group e3cdc39a-53f0-427a-8098-48785d2e7b4e \
 --key-name deneil_keypair \
 --user-data password-cloud-init \
-deneil_rocky_barbican_test-2
+deneil_rocky_barbican_test-3
+
+
+openstack server create \
+--flavor FiCo-v4m8-Q5 \
+--image 41af64d0-987b-4f58-ab92-759973b222a7 \
+--nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
+--security-group e3cdc39a-53f0-427a-8098-48785d2e7b4e \
+--key-name deneil_keypair \
+--user-data rocky-password-cloud-init \
+deneil_rocky_barbican_test-cloud-init
+
+
+
+
 
 ```config
 #cloud-config
