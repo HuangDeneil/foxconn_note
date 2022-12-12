@@ -16,18 +16,16 @@ ssh -i ~/.ssh/foxconn-openstack_key.pem root@172.16.16.26
 ## 透過 net-002 進到network id 網域ssh 連線
 ## Ubuntu
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem ubuntu@192.168.77.16
-## deneil_rocky_barbican_test
-ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.9
-## deneil_rocky_keystone_test
-ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.27
 
 
-## deneil_rocky_barbican_test-3
-ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.5
+## deneil-barbican-test
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.15
+
+## deneil-test (centOS 7.9)
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem centos@192.168.77.14
 
 
-## deneil_rocky_barbican_test-cloud-init
-ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.10
+
 ```
 
 # KH-testBed.L
@@ -65,29 +63,15 @@ sudo systemctl disable firewalld
 sudo systemctl stop firewalld
 ``` -->
 
-## Disable NetworkManager
+<!-- ## Disable NetworkManager
 ```bash
 # sudo systemctl disable NetworkManager
 sudo systemctl stop NetworkManager
 sudo systemctl enable NetworkManager    ## if not enable，root後ip可能會拿不到必須用console vnc進去手動restart
-```
-
-## Install network-scripts package
-```bash
-sudo dnf install network-scripts -y
-
-## 其他工具 (optional)
-sudo yum install net-tools -y
-```
-
-<!-- 
-# Start Network Service
-```bash
-sudo systemctl enable network
-sudo systemctl start network
 ``` -->
 
-## Disable selinux
+
+## Disable selinux (修改完需要reboot才有權限開其他port)
 ```bash
 sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/selinux/config
 ```
@@ -103,11 +87,14 @@ SELINUX=disabled
 ...
 SELINUXTYPE=targeted
 ```
-<!-- 
+
 ## 時間配置
 ```bash
-sudo yum install chrony
-``` -->
+# sudo yum install chrony
+
+dnf install langpacks-en glibc-all-langpacks -y
+timedatectl set-timezone Asia/Taipei
+```
 
 ---
 
@@ -118,6 +105,14 @@ dnf install https://repos.fedorapeople.org/repos/openstack/openstack-zed/rdo-rel
 
 ## install client
 yum install python3-openstackclient -y
+```
+
+## Install network-scripts package
+```bash
+sudo dnf install network-scripts -y
+
+## 其他工具 (optional)
+sudo yum install net-tools -y
 ```
 
 
@@ -209,7 +204,8 @@ vim /etc/keystone/keystone.conf
 ```conf
 [database]
 # ...
-connection = mysql+pymysql://keystone:foxconn@127.0.0.1/keystone
+connection = mysql+pymysql://keystone:foxconn@192.168.77.15/keystone
+; connection = mysql+pymysql://keystone:foxconn@127.0.0.1/keystone
 
 ...
 
@@ -234,10 +230,16 @@ keystone-manage credential_setup --keystone-user keystone --keystone-group keyst
 ## Bootstrap the Identity service:
 ```bash 
 keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://127.0.0.1:5000/v3/ \
---bootstrap-internal-url http://127.0.0.1:5000/v3/ \
---bootstrap-public-url http://127.0.0.1:5000/v3/ \
+--bootstrap-admin-url http://192.168.77.15:5000/v3/ \
+--bootstrap-internal-url http://192.168.77.15:5000/v3/ \
+--bootstrap-public-url http://192.168.77.15:5000/v3/ \
 --bootstrap-region-id RegionOne
+
+# keystone-manage bootstrap --bootstrap-password admin_foxconn \
+# --bootstrap-admin-url http://127.0.0.1:5000/v3/ \
+# --bootstrap-internal-url http://127.0.0.1:5000/v3/ \
+# --bootstrap-public-url http://127.0.0.1:5000/v3/ \
+# --bootstrap-region-id RegionOne
 ```
 
 --------------------------------
@@ -301,7 +303,7 @@ export OS_PASSWORD=admin_foxconn
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://127.0.0.1:5000/v3
+export OS_AUTH_URL=http://192.168.77.15:5000/v3
 export OS_IDENTITY_API_VERSION=3
 " > admin-openrc.sh
 ```
@@ -485,27 +487,6 @@ Bye
 source admin-openrc.sh
 ```
 
-## Create the barbican user:
-```bash
-openstack user create --domain default --password-prompt barbican
-```
-## output
-```bash
-[root@deneil-barbican-test-keystone rocky]# openstack user create --domain default --password-prompt barbican
-User Password: admin_foxconn
-Repeat User Password: admin_foxconn
-+---------------------+----------------------------------+
-| Field               | Value                            |
-+---------------------+----------------------------------+
-| domain_id           | default                          |
-| enabled             | True                             |
-| id                  | d25644a6fafd4aafa31960aba8a439db |
-| name                | barbican                         |
-| options             | {}                               |
-| password_expires_at | None                             |
-+---------------------+----------------------------------+
-```
-
 
 
 
@@ -531,6 +512,30 @@ openstack project create service
 +-------------+----------------------------------+
 ```
 
+
+
+
+## Create the barbican user:
+```bash
+openstack user create --domain default --project service --password admin_foxconn barbican
+#openstack user create --domain default --password-prompt barbican
+```
+## output
+```bash
+[root@deneil-barbican-test-keystone rocky]# openstack user create --domain default --password-prompt barbican
+User Password: admin_foxconn
+Repeat User Password: admin_foxconn
++---------------------+----------------------------------+
+| Field               | Value                            |
++---------------------+----------------------------------+
+| domain_id           | default                          |
+| enabled             | True                             |
+| id                  | d25644a6fafd4aafa31960aba8a439db |
+| name                | barbican                         |
+| options             | {}                               |
+| password_expires_at | None                             |
++---------------------+----------------------------------+
+```
 
 
 
@@ -586,17 +591,18 @@ openstack service create --name barbican --description "Key Manager" key-manager
 
 # Create the Key Manager service API endpoints:
 ```bash
-openstack endpoint create --region RegionOne key-manager public http://127.0.0.1:9311
-openstack endpoint create --region RegionOne key-manager internal http://127.0.0.1:9311
-openstack endpoint create --region RegionOne key-manager admin http://127.0.0.1:9311
+openstack endpoint create --region RegionOne key-manager public http://192.168.77.15:9311
+openstack endpoint create --region RegionOne key-manager internal http://192.168.77.15:9311
+openstack endpoint create --region RegionOne key-manager admin http://192.168.77.15:9311
 
+# openstack endpoint create --region RegionOne key-manager public http://127.0.0.1:9311
+# openstack endpoint create --region RegionOne key-manager internal http://127.0.0.1:9311
+# openstack endpoint create --region RegionOne key-manager admin http://127.0.0.1:9311
 ```
 
 # Barbican installation
 ```bash
-
 sudo yum install openstack-barbican-api openstack-barbican-keystone-listener openstack-barbican-worker -y
-
 ```
 
 
@@ -609,12 +615,14 @@ vim /etc/barbican/barbican.conf
 ```conf
 [DEFAULT]
 ...
-sql_connection = mysql+pymysql://barbican:foxconn@127.0.0.1/barbican
+sql_connection = mysql+pymysql://barbican:foxconn@192.168.77.15/barbican
+; sql_connection = mysql+pymysql://barbican:foxconn@127.0.0.1/barbican
 ...
 
 [DEFAULT]
 ...
-transport_url = rabbit://openstack:foxconn@127.0.0.1
+transport_url = rabbit://openstack:foxconn@192.168.77.15
+; transport_url = rabbit://openstack:foxconn@127.0.0.1
 ...
 
 [keystone_authtoken]
@@ -676,12 +684,12 @@ vim /etc/httpd/conf.d/wsgi-barbican.conf
 </VirtualHost>
 ```
 
-
+<!-- 
 # restart httpd
 ```bash
 systemctl restart httpd
 systemctl restart httpd.service
-```
+``` -->
 
 ```bash
 systemctl enable --now openstack-barbican-api
@@ -693,6 +701,11 @@ systemctl start --now openstack-barbican-api
 openstack endpoint list
 openstack secret store --name mysecret --payload j4=]d21
 openstack secret list
+
+
+openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa 
+
+
 ```
 
 
@@ -721,6 +734,103 @@ openstack secret list
 | http://localhost:9311/v1/secrets/278c96a3-2e21-4bd7-88b6-cf3bac689b74 | mysecret | 2022-12-09T08:57:39+00:00 | ACTIVE | {'default': 'application/octet-stream'} | aes       |        256 | opaque      | cbc  | None       |
 +-----------------------------------------------------------------------+----------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
 ```
+
+```bash
+# --mode ctr (--bit-length >= 1024)
+openstack secret order create asymmetric --name 'secret-asy-4096' --mode ctr --bit-length 4096 --algorithm rsa 
+openstack secret order create asymmetric --name 'secret-asy-2024' --mode ctr --bit-length 2048 --algorithm rsa 
+openstack secret order create asymmetric --name 'secret-asy-1024' --mode ctr --bit-length 1024 --algorithm rsa 
+```
+
+
+## 
+```bash
+[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa 
++----------------+----------------------------------------------------------------------+
+| Field          | Value                                                                |
++----------------+----------------------------------------------------------------------+
+| Order href     | http://localhost:9311/v1/orders/75ca5640-6063-4789-90c7-27d5f3b727fd |
+| Type           | Asymmetric                                                           |
+| Container href | None                                                                 |
+| Secret href    | N/A                                                                  |
+| Created        | None                                                                 |
+| Status         | None                                                                 |
+| Error code     | None                                                                 |
+| Error message  | None                                                                 |
++----------------+----------------------------------------------------------------------+
+[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret list
++-----------------------------------------------------------------------+----------------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
+| Secret href                                                           | Name           | Created
+     | Status | Content types                           | Algorithm | Bit length | Secret type | Mode | Expiration |
++-----------------------------------------------------------------------+----------------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
+| http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd | secret-asy-001 | 2022-12-12T00:50:41+00:00 | ACTIVE | {'default': 'application/octet-stream'} | rsa       |       1024 | private     | None | None    
+   |
+| http://localhost:9311/v1/secrets/66e468da-eebb-45bd-a4c6-1d25896de578 | secret-asy-001 | 2022-12-12T00:50:41+00:00 | ACTIVE | {'default': 'application/octet-stream'} | rsa       |       1024 | public      | None | None    
+   |
++-----------------------------------------------------------------------+----------------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
+[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret get http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd
++---------------+-----------------------------------------------------------------------+
+| Field         | Value                                                                 |
++---------------+-----------------------------------------------------------------------+
+| Secret href   | http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd |
+| Name          | secret-asy-001                                                        |
+| Created       | 2022-12-12T00:50:41+00:00                                             |
+| Status        | ACTIVE                                                                |
+| Content types | {'default': 'application/octet-stream'}                               |
+| Algorithm     | rsa                                                                   |
+| Bit length    | 1024                                                                  |
+| Secret type   | private                                                               |
+| Mode          | None                                                                  |
+| Expiration    | None                                                                  |
++---------------+-----------------------------------------------------------------------+
+[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret get http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd --payload
++---------+------------------------------------------------------------------+
+| Field   | Value                                                            |
++---------+------------------------------------------------------------------+
+| Payload | -----BEGIN PRIVATE KEY-----                                      |
+|         | MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAK2TqbRLwBZeouqd |
+|         | 099nahlhcViaG7SZ0naWvGr6+xdYd2In81WhTU3nfLSYDO7JMETmO2+EyNDcgFR1 |
+|         | 0OABF0QeAOsT9nwvVNeXmb8LtOVJkP8tsUYuEmmQ8CZLN8LvU+laLSUBEE5nnzdq |
+|         | O4A7xCtq/VDxJ93XLtP8wFrPR1HrAgMBAAECgYEAj1HqgP0/CPlxKanRxJgeCgDk |
+|         | VxVAJRoRpmuF/gtoAfnA8WItUJoUO2wVEwStQQkL+wfjMYyBR7uZlqOFKUCdVPwV |
+|         | 4iFxrx6cj6d4v55OiNfGFDLNfScxcLosz93J5nTl3l1vLZEU2PehlfZWLXGimLrj |
+|         | HW4MeNTBsB+/8gY3X/ECQQDUgJUq+6ax5X3Vt4qyne92TFzU0nQRLXinXpo/OU60 |
+|         | TAKQCq33Mjrp0btmo5r6j8+7/CY7tkmbgn4KTak/Al0DAkEA0RtUw3+M3/mkLF94 |
+|         | 1NabHVp7OAtovVe7BnKhfSlY70Fk6ZGJIf4pFKluv8as1LKglgWPbqzsW636V3rC |
+|         | wTGe+QJBAITcS+dO5Z8OPAm2MrqQclqFTfkmB7mBs5D5XfkvjFy/tU53zuLh/eGY |
+|         | 5tE6czg7WAdRlFn7E7Rt9v3cJnglsx8CQC4s4uLo36r17ZL+4ifd3BL3UA5oNpDZ |
+|         | NquN1KtW3hS3VBlf0fB3t4qgf5xJuxCdAWkfgTTnaqo0GPwIV8lhs8ECQA5MassG |
+|         | JAiGYEsTXctGRzz3NJrYoTo/FEvoSqaA+bz4MjIwBGM9JzfiyR4a+sTc9msvF6qw |
+|         | zgPp3ywbWC7oXqg=                                                 |
+|         | -----END PRIVATE KEY-----                                        |
+|         |                                                                  |
++---------+------------------------------------------------------------------+
+[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret get http://localhost:9311/v1/secrets/66e468da-eebb-45bd-a4c6-1d25896de578 --payload
++---------+------------------------------------------------------------------+
+| Field   | Value                                                            |
++---------+------------------------------------------------------------------+
+| Payload | -----BEGIN PUBLIC KEY-----                                       |
+|         | MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtk6m0S8AWXqLqndPfZ2oZYXFY |
+|         | mhu0mdJ2lrxq+vsXWHdiJ/NVoU1N53y0mAzuyTBE5jtvhMjQ3IBUddDgARdEHgDr |
+|         | E/Z8L1TXl5m/C7TlSZD/LbFGLhJpkPAmSzfC71PpWi0lARBOZ583ajuAO8Qrav1Q |
+|         | 8Sfd1y7T/MBaz0dR6wIDAQAB                                         |
+|         | -----END PUBLIC KEY-----                                         |
+|         |                                                                  |
++---------+------------------------------------------------------------------+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
