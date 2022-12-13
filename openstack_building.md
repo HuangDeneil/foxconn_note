@@ -697,9 +697,16 @@ openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bi
 openstack secret order create asymmetric --name 'secret-asy-001-cbc' --mode cbc --bit-length 1024 --algorithm rsa 
 
 
+openstack secret order create asymmetric --name 'test' --algorithm rsa --mode cbc --bit-length 1024 
+
+openstack secret order create asymmetric --name 'test' --algorithm rsa --mode PKCS8 --bit-length 1024 
+ 
+
 # error
 openstack secret order create asymmetric --name 'secret-asy-001-aes' --mode ctr --bit-length 1024 --algorithm aes 
-
+openstack secret order create key --name 'secret-sy-001-cbc' --mode cbc --bit-length 1024 --algorithm rsa 
+openstack secret order create key --name 'secret-sy-001-cbc' --mode cbc --bit-length 1024 --algorithm aes 
+openstack secret order create asymmetric --name 'test' --algorithm rsa
 ```
 
 
