@@ -3,7 +3,7 @@ from keystoneauth1 import session
 from barbicanclient import client
 
 # We'll use Keystone API v3 for authentication
-auth = identity.v3.Password(auth_url='http://localhost:5000/v3',
+auth = identity.v3.Password(auth_url='http://192.168.77.15:5000/v3',
                             username='admin',
                             user_domain_name='Default',
                             password='admin_foxconn',
@@ -27,6 +27,7 @@ secret = barbican.orders.create_asymmetric(
 
 # summit to barbican & return order url
 order_url = secret.submit()
+order_url ="http://192.168.77.15:9311/v1/orders/a150e411-e612-4756-9c55-a49c1a5c2b35"
 
 # get order_obj
 retrieved_order = barbican.orders.get(order_url)

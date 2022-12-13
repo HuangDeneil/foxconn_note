@@ -21,6 +21,10 @@ ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubu
 ## deneil-barbican-test
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.15
 
+
+## deneil-test-rotate
+ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem rocky@192.168.77.25
+
 ## deneil-test (centOS 7.9)
 ip netns exec qdhcp-764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 ssh -i ~/deneil-dev/Ubuntu20_key.pem centos@192.168.77.14
 
@@ -55,22 +59,14 @@ yum update -y
 # install editor
 sudo yum install nano vim -y
 ```
-<!--
-## Disable `firewall` 
-note : rocky linux default not installed
- ```bash
-sudo systemctl disable firewalld
-sudo systemctl stop firewalld
-``` -->
-
-<!-- ## Disable NetworkManager
+## 時間配置
 ```bash
-# sudo systemctl disable NetworkManager
-sudo systemctl stop NetworkManager
-sudo systemctl enable NetworkManager    ## if not enable，root後ip可能會拿不到必須用console vnc進去手動restart
-``` -->
+# sudo yum install chrony
+dnf install langpacks-en glibc-all-langpacks -y
+timedatectl set-timezone Asia/Taipei
+```
 
-
+---
 ## Disable selinux (修改完需要reboot才有權限開其他port)
 ```bash
 sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/selinux/config
@@ -88,15 +84,7 @@ SELINUX=disabled
 SELINUXTYPE=targeted
 ```
 
-## 時間配置
-```bash
-# sudo yum install chrony
 
-dnf install langpacks-en glibc-all-langpacks -y
-timedatectl set-timezone Asia/Taipei
-```
-
----
 
 ## install openstack zed version
 ```bash
@@ -706,6 +694,12 @@ openstack secret list
 openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa 
 
 
+openstack secret order create asymmetric --name 'secret-asy-001-cbc' --mode cbc --bit-length 1024 --algorithm rsa 
+
+
+# error
+openstack secret order create asymmetric --name 'secret-asy-001-aes' --mode ctr --bit-length 1024 --algorithm aes 
+
 ```
 
 
@@ -745,76 +739,81 @@ openstack secret order create asymmetric --name 'secret-asy-1024' --mode ctr --b
 
 ## 
 ```bash
-[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa 
-+----------------+----------------------------------------------------------------------+
-| Field          | Value                                                                |
-+----------------+----------------------------------------------------------------------+
-| Order href     | http://localhost:9311/v1/orders/75ca5640-6063-4789-90c7-27d5f3b727fd |
-| Type           | Asymmetric                                                           |
-| Container href | None                                                                 |
-| Secret href    | N/A                                                                  |
-| Created        | None                                                                 |
-| Status         | None                                                                 |
-| Error code     | None                                                                 |
-| Error message  | None                                                                 |
-+----------------+----------------------------------------------------------------------+
-[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret list
-+-----------------------------------------------------------------------+----------------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
-| Secret href                                                           | Name           | Created
-     | Status | Content types                           | Algorithm | Bit length | Secret type | Mode | Expiration |
-+-----------------------------------------------------------------------+----------------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
-| http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd | secret-asy-001 | 2022-12-12T00:50:41+00:00 | ACTIVE | {'default': 'application/octet-stream'} | rsa       |       1024 | private     | None | None    
-   |
-| http://localhost:9311/v1/secrets/66e468da-eebb-45bd-a4c6-1d25896de578 | secret-asy-001 | 2022-12-12T00:50:41+00:00 | ACTIVE | {'default': 'application/octet-stream'} | rsa       |       1024 | public      | None | None    
-   |
-+-----------------------------------------------------------------------+----------------+---------------------------+--------+-----------------------------------------+-----------+------------+-------------+------+------------+
-[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret get http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd
-+---------------+-----------------------------------------------------------------------+
-| Field         | Value                                                                 |
-+---------------+-----------------------------------------------------------------------+
-| Secret href   | http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd |
-| Name          | secret-asy-001                                                        |
-| Created       | 2022-12-12T00:50:41+00:00                                             |
-| Status        | ACTIVE                                                                |
-| Content types | {'default': 'application/octet-stream'}                               |
-| Algorithm     | rsa                                                                   |
-| Bit length    | 1024                                                                  |
-| Secret type   | private                                                               |
-| Mode          | None                                                                  |
-| Expiration    | None                                                                  |
-+---------------+-----------------------------------------------------------------------+
-[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret get http://localhost:9311/v1/secrets/d876a3bc-9bfa-4230-a640-ec2126571cdd --payload
-+---------+------------------------------------------------------------------+
-| Field   | Value                                                            |
-+---------+------------------------------------------------------------------+
-| Payload | -----BEGIN PRIVATE KEY-----                                      |
-|         | MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAK2TqbRLwBZeouqd |
-|         | 099nahlhcViaG7SZ0naWvGr6+xdYd2In81WhTU3nfLSYDO7JMETmO2+EyNDcgFR1 |
-|         | 0OABF0QeAOsT9nwvVNeXmb8LtOVJkP8tsUYuEmmQ8CZLN8LvU+laLSUBEE5nnzdq |
-|         | O4A7xCtq/VDxJ93XLtP8wFrPR1HrAgMBAAECgYEAj1HqgP0/CPlxKanRxJgeCgDk |
-|         | VxVAJRoRpmuF/gtoAfnA8WItUJoUO2wVEwStQQkL+wfjMYyBR7uZlqOFKUCdVPwV |
-|         | 4iFxrx6cj6d4v55OiNfGFDLNfScxcLosz93J5nTl3l1vLZEU2PehlfZWLXGimLrj |
-|         | HW4MeNTBsB+/8gY3X/ECQQDUgJUq+6ax5X3Vt4qyne92TFzU0nQRLXinXpo/OU60 |
-|         | TAKQCq33Mjrp0btmo5r6j8+7/CY7tkmbgn4KTak/Al0DAkEA0RtUw3+M3/mkLF94 |
-|         | 1NabHVp7OAtovVe7BnKhfSlY70Fk6ZGJIf4pFKluv8as1LKglgWPbqzsW636V3rC |
-|         | wTGe+QJBAITcS+dO5Z8OPAm2MrqQclqFTfkmB7mBs5D5XfkvjFy/tU53zuLh/eGY |
-|         | 5tE6czg7WAdRlFn7E7Rt9v3cJnglsx8CQC4s4uLo36r17ZL+4ifd3BL3UA5oNpDZ |
-|         | NquN1KtW3hS3VBlf0fB3t4qgf5xJuxCdAWkfgTTnaqo0GPwIV8lhs8ECQA5MassG |
-|         | JAiGYEsTXctGRzz3NJrYoTo/FEvoSqaA+bz4MjIwBGM9JzfiyR4a+sTc9msvF6qw |
-|         | zgPp3ywbWC7oXqg=                                                 |
-|         | -----END PRIVATE KEY-----                                        |
-|         |                                                                  |
-+---------+------------------------------------------------------------------+
-[root@deneil-rocky-barbican-test-cloud-init rocky]# openstack secret get http://localhost:9311/v1/secrets/66e468da-eebb-45bd-a4c6-1d25896de578 --payload
+[rocky@deneil-barbican-test ~]$ openstack secret order create asymmetric --name 'secret-asy-1024' --mode ctr --bit-length 1024 --algorithm 
+rsa
++----------------+--------------------------------------------------------------------------+
+| Field          | Value                                                                    |
++----------------+--------------------------------------------------------------------------+
+| Order href     | http://192.168.77.15:9311/v1/orders/a150e411-e612-4756-9c55-a49c1a5c2b35 |
+| Type           | Asymmetric                                                               |
+| Container href | None                                                                     |
+| Secret href    | N/A                                                                      |
+| Created        | None                                                                     |
+| Status         | None                                                                     |
+| Error code     | None                                                                     |
+| Error message  | None                                                                     |
++----------------+--------------------------------------------------------------------------+
+
+[rocky@deneil-barbican-test ~]$ openstack secret order get http://192.168.77.15:9311/v1/orders/a150e411-e612-4756-9c55-a49c1a5c2b35
++----------------+------------------------------------------------------------------------------+
+| Field          | Value                                                                        |
++----------------+------------------------------------------------------------------------------+
+| Order href     | http://192.168.77.15:9311/v1/orders/a150e411-e612-4756-9c55-a49c1a5c2b35     |
+| Type           | Asymmetric                                                                   |
+| Container href | http://192.168.77.15:9311/v1/containers/1ba80de2-40fb-4920-ad95-43cbe445a934 |
+| Secret href    | N/A                                                                          |
+| Created        | 2022-12-13T05:50:29+00:00                                                    |
+| Status         | ACTIVE                                                                       |
+| Error code     | None                                                                         |
+| Error message  | None                                                                         |
++----------------+------------------------------------------------------------------------------+
+
+[rocky@deneil-barbican-test ~]$ openstack secret container get http://192.168.77.15:9311/v1/containers/1ba80de2-40fb-4920-ad95-43cbe445a934+----------------+------------------------------------------------------------------------------+
+| Field          | Value                                                                        |
++----------------+------------------------------------------------------------------------------+
+| Container href | http://192.168.77.15:9311/v1/containers/1ba80de2-40fb-4920-ad95-43cbe445a934 |
+| Name           | secret-asy-1024                                                              |
+| Created        | 2022-12-13 05:50:29+00:00                                                    |
+| Status         | ACTIVE                                                                       |
+| Type           | rsa                                                                          |
+| Public Key     | http://192.168.77.15:9311/v1/secrets/4ac5a11a-d3fb-4083-8e75-32433179e458    |
+| Private Key    | http://192.168.77.15:9311/v1/secrets/0f269cd2-df8d-47cf-93ba-eb00ed698138    |
+| PK Passphrase  | None                                                                         |
+| Consumers      | None                                                                         |
++----------------+------------------------------------------------------------------------------+
+
+[rocky@deneil-barbican-test ~]$ openstack secret get --payload http://192.168.77.15:9311/v1/secrets/4ac5a11a-d3fb-4083-8e75-32433179e458
 +---------+------------------------------------------------------------------+
 | Field   | Value                                                            |
 +---------+------------------------------------------------------------------+
 | Payload | -----BEGIN PUBLIC KEY-----                                       |
-|         | MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtk6m0S8AWXqLqndPfZ2oZYXFY |
-|         | mhu0mdJ2lrxq+vsXWHdiJ/NVoU1N53y0mAzuyTBE5jtvhMjQ3IBUddDgARdEHgDr |
-|         | E/Z8L1TXl5m/C7TlSZD/LbFGLhJpkPAmSzfC71PpWi0lARBOZ583ajuAO8Qrav1Q |
-|         | 8Sfd1y7T/MBaz0dR6wIDAQAB                                         |
+|         | MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFt/KQA0Jy9yRWbJ77cHcam1pN |
+|         | Ps4wBW07DpR2rdkSet1zJeEKdbVE3hyxfo/8cj2mx9YfHwi/srlSGtvTs2h4MxmK |
+|         | tOA+0iViQmkrZ62MMnt4/aWw2dC1Z/GbfgqJnBWZQGsL0V0BDU5Y1DPILGtJHy9K |
+|         | EmH29WRyHVl+4/mr8QIDAQAB                                         |
 |         | -----END PUBLIC KEY-----                                         |
+|         |                                                                  |
++---------+------------------------------------------------------------------+
+[rocky@deneil-barbican-test ~]$ openstack secret get --payload http://192.168.77.15:9311/v1/secrets/0f269cd2-df8d-47cf-93ba-eb00ed698138
++---------+------------------------------------------------------------------+
+| Field   | Value                                                            |
++---------+------------------------------------------------------------------+
+| Payload | -----BEGIN PRIVATE KEY-----                                      |
+|         | MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMW38pADQnL3JFZs |
+|         | nvtwdxqbWk0+zjAFbTsOlHat2RJ63XMl4Qp1tUTeHLF+j/xyPabH1h8fCL+yuVIa |
+|         | 29OzaHgzGYq04D7SJWJCaStnrYwye3j9pbDZ0LVn8Zt+ComcFZlAawvRXQENTljU |
+|         | M8gsa0kfL0oSYfb1ZHIdWX7j+avxAgMBAAECgYBUyXUzXLJ6KpFinmHu4WOx/TzU |
+|         | M0KoRSt6T95KpnKYAihE4NGIcsGxLq6PTv7f+v2FL90aq2xNCI+ALhRmzGDXqdux |
+|         | hinYMKE/0fxDevv0qlRVHxqoIXPXiClgdFDxCInhTv4poS7DMB6/rMUKt5baq1k7 |
+|         | WFTxDaoqr+MnZNi7gQJBAOKdVHGR1OPvmgSxwiojX8DrndCnMOT61oOM71ggP+xd |
+|         | gXoiVr6PAVmzMoDmZNhjj5eeD44TLloWTHsz9Tg9jl0CQQDfW2N/58B66cW75NVj |
+|         | utr89RSj/xb7pjQLFIHnO33ZcsZLpRqEe1Jr9H4tXaSnBGzGa6NwQ+m9YU8m3daN |
+|         | DfKlAkEAxwECtvkpy0EOMDEqIXcPD4vZ+vHXrj3ZQ4zwYqNvf1Jd8bNWGeHbfbow |
+|         | D6JDzQMhhjP31PxjKBmM8GSgY9MqwQJAKIP7WIhBcgpVw++OhbivYJNUWys6kAtm |
+|         | BVyC897mxTr8nVwlo0J7gPmoqbIC3AkBcjy0OPkYvTGZmgNDl/KfwQJBAIurWqBy |
+|         | eyuBRv0+qpM4iZsOcgOsXZBls/Q96ty8MkijbRWUXHM0cL5u5lX31SyMJhP9woHQ |
+|         | d2sh5r/vu0S+sM4=                                                 |
+|         | -----END PRIVATE KEY-----                                        |
 |         |                                                                  |
 +---------+------------------------------------------------------------------+
 
