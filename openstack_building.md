@@ -223,6 +223,13 @@ keystone-manage bootstrap --bootstrap-password admin_foxconn \
 --bootstrap-public-url http://192.168.77.15:5000/v3/ \
 --bootstrap-region-id RegionOne
 
+
+keystone-manage bootstrap --bootstrap-password admin_foxconn \
+--bootstrap-admin-url http://192.168.77.14:5000/v3/ \
+--bootstrap-internal-url http://192.168.77.14:5000/v3/ \
+--bootstrap-public-url http://192.168.77.14:5000/v3/ \
+--bootstrap-region-id RegionOne
+
 # keystone-manage bootstrap --bootstrap-password admin_foxconn \
 # --bootstrap-admin-url http://127.0.0.1:5000/v3/ \
 # --bootstrap-internal-url http://127.0.0.1:5000/v3/ \
@@ -583,6 +590,10 @@ openstack endpoint create --region RegionOne key-manager public http://192.168.7
 openstack endpoint create --region RegionOne key-manager internal http://192.168.77.15:9311
 openstack endpoint create --region RegionOne key-manager admin http://192.168.77.15:9311
 
+# openstack endpoint create --region RegionOne key-manager public http://192.168.77.14:9311
+# openstack endpoint create --region RegionOne key-manager internal http://192.168.77.14:9311
+# openstack endpoint create --region RegionOne key-manager admin http://192.168.77.14:9311
+
 # openstack endpoint create --region RegionOne key-manager public http://127.0.0.1:9311
 # openstack endpoint create --region RegionOne key-manager internal http://127.0.0.1:9311
 # openstack endpoint create --region RegionOne key-manager admin http://127.0.0.1:9311
@@ -606,8 +617,7 @@ vim /etc/barbican/barbican.conf
 sql_connection = mysql+pymysql://barbican:foxconn@192.168.77.15/barbican
 ; sql_connection = mysql+pymysql://barbican:foxconn@127.0.0.1/barbican
 ...
-
-[DEFAULT]
+host_href = http://192.168.77.15:9311
 ...
 transport_url = rabbit://openstack:foxconn@192.168.77.15
 ; transport_url = rabbit://openstack:foxconn@127.0.0.1
@@ -615,9 +625,9 @@ transport_url = rabbit://openstack:foxconn@192.168.77.15
 
 [keystone_authtoken]
 ...
-www_authenticate_uri = http://127.0.0.1:5000
-auth_url = http://127.0.0.1:5000
-memcached_servers = 127.0.0.1:11211
+www_authenticate_uri = http://192.168.77.15:5000
+auth_url = http://192.168.77.15:5000
+memcached_servers = 192.168.77.15:11211
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -693,6 +703,12 @@ openstack secret list
 
 openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa 
 
+openstack secret order create asymmetric --name 'test-ssh-DSA' --mode ctr --bit-length 1024 --algorithm dsa
+
+
+ 
+
+
 
 openstack secret order create asymmetric --name 'secret-asy-001-cbc' --mode cbc --bit-length 1024 --algorithm rsa 
 
@@ -707,6 +723,26 @@ openstack secret order create asymmetric --name 'secret-asy-001-aes' --mode ctr 
 openstack secret order create key --name 'secret-sy-001-cbc' --mode cbc --bit-length 1024 --algorithm rsa 
 openstack secret order create key --name 'secret-sy-001-cbc' --mode cbc --bit-length 1024 --algorithm aes 
 openstack secret order create asymmetric --name 'test' --algorithm rsa
+```
+
+# deletion all secret
+```bash
+## Deletion all order
+for i in `openstack secret order list | awk '{print $2}'` 
+do 
+openstack secret order delete $i
+done
+## Deletion all container
+for i in `openstack secret container list | awk '{print $2}'` 
+do 
+openstack secret container delete $i
+done
+## Deletion all secrets
+for i in `openstack secret list | awk '{print $2}'`
+do 
+openstack secret delete $i 
+done
+
 ```
 
 
