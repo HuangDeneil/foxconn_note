@@ -701,22 +701,23 @@ openstack secret store --name mysecret --payload j4=]d21
 openstack secret list
 
 
-openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa 
+openstack secret order create asymmetric --name 'secret-asy-2048' --mode ctr --bit-length 2048 --algorithm rsa
+# http://192.168.77.15:9311/v1/orders/6c285ca3-f30c-4172-966a-325dfc568184
 
+openstack secret order create asymmetric --name 'secret-asy-2048-2' --mode ctr --bit-length 2048 --algorithm rsa 
+# http://192.168.77.15:9311/v1/orders/cb2560b6-bafa-43e9-aa2c-74d2df6d2e37
+
+
+openstack secret order create asymmetric --name 'secret-asy-4096' --mode ctr --bit-length 4096 --algorithm rsa 
+openstack secret order create asymmetric --name 'secret-asy-8192' --mode ctr --bit-length 8192 --algorithm rsa 
+
+
+
+
+ 
+
+# [bug] create successful but cannot view container & secret 
 openstack secret order create asymmetric --name 'test-ssh-DSA' --mode ctr --bit-length 1024 --algorithm dsa
-
-
- 
-
-
-
-openstack secret order create asymmetric --name 'secret-asy-001-cbc' --mode cbc --bit-length 1024 --algorithm rsa 
-
-
-openstack secret order create asymmetric --name 'test' --algorithm rsa --mode cbc --bit-length 1024 
-
-openstack secret order create asymmetric --name 'test' --algorithm rsa --mode PKCS8 --bit-length 1024 
- 
 
 # error
 openstack secret order create asymmetric --name 'secret-asy-001-aes' --mode ctr --bit-length 1024 --algorithm aes 
@@ -725,22 +726,43 @@ openstack secret order create key --name 'secret-sy-001-cbc' --mode cbc --bit-le
 openstack secret order create asymmetric --name 'test' --algorithm rsa
 ```
 
+```bash
+# url, user, ip, local_file_path, local_file_path
+python test_transport.py \
+http://192.168.77.15:9311/v1/orders/6c285ca3-f30c-4172-966a-325dfc568184 \
+rocky \
+192.168.77.5 \
+example-rsa.pem \
+example-rsa.pem-test
+```
+
+
+
 # deletion all secret
 ```bash
 ## Deletion all order
 for i in `openstack secret order list | awk '{print $2}'` 
 do 
-openstack secret order delete $i
+    if [[ ! "$i" == "Order" ]]; then
+        openstack secret order delete $i
+        echo $i deleted
+    fi
 done
 ## Deletion all container
 for i in `openstack secret container list | awk '{print $2}'` 
 do 
-openstack secret container delete $i
+    if [[ ! "$i" == "|" || ! "$i" == "Container" ]]; then
+        openstack secret container delete $i
+        echo $i deleted
+    fi
 done
 ## Deletion all secrets
 for i in `openstack secret list | awk '{print $2}'`
 do 
-openstack secret delete $i 
+    if [[ ! "$i" == "Secret" ]]; then
+        openstack secret delete $i
+        echo $i deleted
+    fi
 done
 
 ```

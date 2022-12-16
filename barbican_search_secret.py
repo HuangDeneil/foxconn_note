@@ -1,13 +1,25 @@
 from keystoneclient.auth import identity
 from keystoneauth1 import session
 from barbicanclient import client
+from Crypto.PublicKey import RSA
 
 import sys
 
-url = sys.argv[1]
-type= sys.argv[2]
+if len(sys.argv) >= 3:
+    url = sys.argv[1]
+    type= sys.argv[2]
+    present= sys.argv[3]
+    key_name = "mykey"
+    if present == "file":
+        if len(sys.argv) == 4:
+            key_name = sys.argv[4]
+            
+else:
+    print("Missing some arguement")
+    quit()
 
-def order_url_to_key(order_url, private_or_public_key_output):
+
+def order_url_to_key(order_url, private_or_public_key_output, type_out, name):
     if private_or_public_key_output == "private" or private_or_public_key_output == "public":
         pass
     else:
@@ -28,18 +40,8 @@ def order_url_to_key(order_url, private_or_public_key_output):
     # Now we use the session to create a Barbican client
     barbican = client.Client(session=sess)
 
-    # summit to barbican & return order url
-    # order_url = "http://localhost:9311/v1/orders/f8abb473-6cf4-4afd-a3a8-486a53da28b7"
-    # order_url = "http://192.168.77.15:9311/v1/orders/f8abb473-6cf4-4afd-a3a8-486a53da28b7"
-    # order_url = "http://192.168.77.15:9311/v1/orders/630a0462-998f-4f32-b9c9-f8c7eeebb4fe"
-
     # get order_obj
     retrieved_order = barbican.orders.get(order_url)
-    
-    try:
-        retrieved_order = barbican.orders.get(order_url)
-    except ValueError:
-        raise BaseException("501")
     
     # get container_ref
     container_url = retrieved_order._container_ref
@@ -53,13 +55,26 @@ def order_url_to_key(order_url, private_or_public_key_output):
     private_key = private_key_obj.payload
     public_key = public_key_obj.payload
 
-    # plain text of key
-    # print(private_key)
-    # print(public_key)
-    if private_or_public_key_output == "private":
-        print(private_key)
-    elif private_or_public_key_output == "public":
-        print(public_key)
+    keyPub = RSA.importKey(public_key) # import the public key
+    keyPriv = RSA.importKey(private_key) # import the private key
+    
+    if private_or_public_key_output == "public":
+        if type_out == "show":
+            print(keyPub.export_key('OpenSSH')).decode('utf-8')
+        elif type_out == "file":
+            f = open(f'{name}.pub','wb')
+            f.write(keyPub.export_key('OpenSSH'))
+            f.close()
+    elif private_or_public_key_output == "private":
+        if type_out == "show":
+            print(keyPriv.export_key('PEM')).decode('utf-8')
+        elif type_out == "file":
+            f = open(f'{name}.pem','wb')
+            f.write(keyPriv.export_key('PEM'))
+            f.close()
 
 if __name__ == '__main__':
-    order_url_to_key(url, type)
+    if len(sys.argv) == 4:
+        order_url_to_key(url, type, present, key_name)
+    else:
+        order_url_to_key(url, type, present)
