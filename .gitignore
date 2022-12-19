@@ -1,2 +1,3 @@
 barbican_required/
-
+*.pem
+*.pub
