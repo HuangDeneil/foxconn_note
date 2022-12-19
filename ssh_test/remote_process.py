@@ -6,6 +6,9 @@ from Crypto.PublicKey import RSA
 import sys
 import paramiko
 import io
+import sys
+
+
 
 def order_url_to_key(order_url):
     # We'll use Keystone API v3 for authentication
@@ -43,7 +46,8 @@ def order_url_to_key(order_url):
     return keyPriv.export_key('PEM').decode('utf-8')
         
 
-def copy_file(private_key, user, ip, local_path, remote_path):
+
+def remote_action(private_key, user, ip, command):
     private_key_str = io.StringIO()
     private_key_str.write(private_key)
     private_key_str.seek(0)
@@ -52,36 +56,35 @@ def copy_file(private_key, user, ip, local_path, remote_path):
 
     private_key_str.close()
     del private_key_str
-
-    trans = paramiko.Transport(ip, 22)
-    trans.start_client()
-    trans.auth_publickey(user, key)
-
+    
+    # 建立連線 
+    ssh = paramiko.SSHClient()
+    
+    ## add to known_hosts
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
+    ssh.connect(hostname=ip,
+        port=22,
+        username=user,
+        pkey=key)
+    
+    # 在遠端執行shell script
+    stdin, stdout, stderr = ssh.exec_command(command)
+    
+    print(stdout.read().decode())
+    
+    # 關閉連接
+    ssh.close()
     del key
-
-    print('Opening transport')
-    conn = trans.open_session()
-
-    print('Opening SFTP session')
-    sftp = paramiko.SFTPClient.from_transport(trans)
-
-    print('Copying local path {} to remote path {}'.format(local_path, remote_path))
-    sftp.put(local_path, remote_path) 
-
-    print('Closing SFTP session')
-    sftp.close()
-
-    print('Closing transport')
-    trans.close()
-
 
 if len(sys.argv) >= 3:
     url = sys.argv[1]
     user = sys.argv[2]
     ip = sys.argv[3]
-    local_file_path = sys.argv[4]
-    remote_file_path = sys.argv[5]
+    command = f'echo -e "Now is {user}@{ip}\n\n.ssh/authorized_keys file: \n"; head ~/.ssh/authorized_keys'
 
 if __name__ == '__main__':
     get_private_key = order_url_to_key(url)
-    copy_file(get_private_key, user, ip, local_file_path, local_file_path)
+    remote_action(get_private_key, user, ip, command)
+
+

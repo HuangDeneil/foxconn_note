@@ -15,7 +15,7 @@ if len(sys.argv) >=1:
 
 def create_key(file_name):
     # We'll use Keystone API v3 for authentication
-    auth = identity.v3.Password(auth_url='http://192.168.184.131:5000/v3',
+    auth = identity.v3.Password(auth_url='http://192.168.77.15:5000/v3',
                                 username='admin',
                                 user_domain_name='Default',
                                 password='admin_foxconn',
