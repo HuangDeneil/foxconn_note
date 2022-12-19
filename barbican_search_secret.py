@@ -60,14 +60,14 @@ def order_url_to_key(order_url, private_or_public_key_output, type_out, name):
     
     if private_or_public_key_output == "public":
         if type_out == "show":
-            print(keyPub.export_key('OpenSSH')).decode('utf-8')
+            print(keyPub.export_key('OpenSSH').decode('utf-8'))
         elif type_out == "file":
             f = open(f'{name}.pub','wb')
             f.write(keyPub.export_key('OpenSSH'))
             f.close()
     elif private_or_public_key_output == "private":
         if type_out == "show":
-            print(keyPriv.export_key('PEM')).decode('utf-8')
+            print(keyPriv.export_key('PEM').decode('utf-8'))
         elif type_out == "file":
             f = open(f'{name}.pem','wb')
             f.write(keyPriv.export_key('PEM'))

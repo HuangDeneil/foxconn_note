@@ -224,12 +224,6 @@ keystone-manage bootstrap --bootstrap-password admin_foxconn \
 --bootstrap-region-id RegionOne
 
 
-keystone-manage bootstrap --bootstrap-password admin_foxconn \
---bootstrap-admin-url http://192.168.77.14:5000/v3/ \
---bootstrap-internal-url http://192.168.77.14:5000/v3/ \
---bootstrap-public-url http://192.168.77.14:5000/v3/ \
---bootstrap-region-id RegionOne
-
 # keystone-manage bootstrap --bootstrap-password admin_foxconn \
 # --bootstrap-admin-url http://127.0.0.1:5000/v3/ \
 # --bootstrap-internal-url http://127.0.0.1:5000/v3/ \
@@ -590,9 +584,9 @@ openstack endpoint create --region RegionOne key-manager public http://192.168.7
 openstack endpoint create --region RegionOne key-manager internal http://192.168.77.15:9311
 openstack endpoint create --region RegionOne key-manager admin http://192.168.77.15:9311
 
-# openstack endpoint create --region RegionOne key-manager public http://192.168.77.14:9311
-# openstack endpoint create --region RegionOne key-manager internal http://192.168.77.14:9311
-# openstack endpoint create --region RegionOne key-manager admin http://192.168.77.14:9311
+# openstack endpoint create --region RegionOne key-manager public http://192.168.184.131:9311
+# openstack endpoint create --region RegionOne key-manager internal http://192.168.184.131:9311
+# openstack endpoint create --region RegionOne key-manager admin http://192.168.184.131:9311
 
 # openstack endpoint create --region RegionOne key-manager public http://127.0.0.1:9311
 # openstack endpoint create --region RegionOne key-manager internal http://127.0.0.1:9311
@@ -706,6 +700,9 @@ openstack secret order create asymmetric --name 'secret-asy-2048' --mode ctr --b
 
 openstack secret order create asymmetric --name 'secret-asy-2048-2' --mode ctr --bit-length 2048 --algorithm rsa 
 # http://192.168.77.15:9311/v1/orders/cb2560b6-bafa-43e9-aa2c-74d2df6d2e37
+
+
+openstack secret order create asymmetric --name 'test-repeat' --mode ctr --bit-length 2048 --algorithm rsa 
 
 
 openstack secret order create asymmetric --name 'secret-asy-4096' --mode ctr --bit-length 4096 --algorithm rsa 
@@ -961,5 +958,9 @@ yum install net-tools -y
 netstat -tulpn
 
 
+
+
+
+cat ~/.ssh/id_rsa.pub | ssh username@remote_host "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
 
 
