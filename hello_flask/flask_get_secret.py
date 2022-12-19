@@ -18,7 +18,7 @@ def username(private_url):
     from barbicanclient import client
     
     # We'll use Keystone API v3 for authentication
-    auth = identity.v3.Password(auth_url='http://localhost:5000/v3',
+    auth = identity.v3.Password(auth_url='http://192.168.77.15:5000/v3',
                             username='admin',
                             user_domain_name='Default',
                             password='admin_foxconn',
