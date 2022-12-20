@@ -6,14 +6,7 @@
 
 order_url="http://192.168.77.15:9311/v1/orders/a906eda8-9f8d-4b4f-9592-4ee1fa3a1fb0"
 ip="192.168.77.5"
-
 remote_user="rocky"
 local_file="testfile.txt"
-# remote_path="/home/rocky/test/"
-# command="head /home/$user/.ssh/authorized_keys"
-# command="ls -hal"
-# python test_transport.py $order_url $remote_user $ip $local_file $remote_path
 
-
-python test_transport.py $order_url $remote_user $ip 
-# python test_transport.py $order_url $remote_user $ip $command
+python remote_process.py $order_url $remote_user $ip 

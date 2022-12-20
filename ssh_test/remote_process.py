@@ -6,10 +6,8 @@ from Crypto.PublicKey import RSA
 import sys
 import paramiko
 import io
-import sys
 
-
-
+## 從barbican 拿key
 def order_url_to_key(order_url):
     # We'll use Keystone API v3 for authentication
     auth = identity.v3.Password(auth_url='http://192.168.77.15:5000/v3',
@@ -46,7 +44,7 @@ def order_url_to_key(order_url):
     return keyPriv.export_key('PEM').decode('utf-8')
         
 
-
+## 將barbican 取得的private key登入遠端VM，執行shell script
 def remote_action(private_key, user, ip, command):
     private_key_str = io.StringIO()
     private_key_str.write(private_key)
@@ -81,10 +79,17 @@ if len(sys.argv) >= 3:
     url = sys.argv[1]
     user = sys.argv[2]
     ip = sys.argv[3]
-    command = f'echo -e "Now is {user}@{ip}\n\n.ssh/authorized_keys file: \n"; head ~/.ssh/authorized_keys'
+    command = f"""
+    hostname=`cat /etc/hostname`
+    echo -e "Now is {user}@{ip} ($hostname)\n\n.ssh/authorized_keys file:"
+    head ~/.ssh/authorized_keys
+    """
 
 if __name__ == '__main__':
+    #從barbican 拿private key
     get_private_key = order_url_to_key(url)
+    
+    # 將barbican 取得的private key登入遠端VM，執行shell script
     remote_action(get_private_key, user, ip, command)
 
 
