@@ -4,10 +4,40 @@ from barbicanclient import client
 
 ## 轉換public key格式 & 輸出檔案
 from Crypto.PublicKey import RSA
-# from Crypto.Cipher import PKCS1_v1_5 as Cipher_PKCS1_v1_5
-
 
 import sys
+
+
+
+# def call_help():
+#     print("""
+# This code is creating private/public key with barbican python api
+
+#     """)
+
+
+
+# import argparse
+
+# parser = argparse.ArgumentParser(
+#     prog = message_prog, # usage
+#     description = message_description, # function description
+#     epilog = message_epilog)
+
+
+# parser.add_argument('--key_name', type=str, help='Input key name')
+# parser.add_argument('--output', type=str, help='key file output path')
+
+
+# input_path = args.fqPath
+# tmp_path = args.tmp
+# output_path = args.outPath
+
+
+# if input_path is None: print('ERROR: No --fqPath input ');call_help() 
+# if tmp_path is None: print('ERROR: No --tmp input ');call_help() 
+# if output_path is None: print('ERROR: No --outPath input ');call_help() 
+
 
 if len(sys.argv) >=1:
     key_name = sys.argv[1]
