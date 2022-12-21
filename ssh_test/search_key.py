@@ -70,7 +70,7 @@ def order_url_to_key(order_url, private_or_public_key_output, type_out, name):
     # private key
     elif private_or_public_key_output == "private":
         if type_out == "show":
-            print(keyPriv.decode('utf-8'))
+            print(private_key.decode('utf-8'))
         elif type_out == "file":
             f = open(f'{name}.pem','wb')
             f.write(keyPriv.export_key('PEM'))
