@@ -1,5 +1,16 @@
+## 現在用來做userdate 的cloudinit :
+```config
+#cloud-config
+password: foxconn
+chpasswd: { expire: False }
+ssh_pwauth: True
+```
 
 
+#### ####################################
+#### ####################################
+#### ####################################
+### under testing
 ```bash
 #cloud-config
 users:
