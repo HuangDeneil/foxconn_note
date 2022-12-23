@@ -8,6 +8,14 @@ ip netns exec qdhcp-<OPSTK network_id> ssh -i <key.pem> <user>@<ip>
 ip netns exec qdhcp-cb807b61-8351-41fa-a635-add24dc7612f ssh -i Ubuntu20_key.pem rocky@192.168.66.10
 ```
 
+## tj-testBed.Q
+```bash
+
+ip netns exec qdhcp-c94ceb9a-c58e-4897-87ef-dac98e4993ca ssh rocky@192.168.77.15
+
+```
+
+
 # KH-testBed.Q
 ```bash
 ## 連線至net-002

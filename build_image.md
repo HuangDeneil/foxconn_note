@@ -441,3 +441,36 @@ openstack image create \
 FICO-Ubuntu-20.04
 
 FICO-Ubuntu-20.04.qcow2
+
+
+
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file barbicanVM-test-volume-to-image.qcow2 \
+--property description="rocky linux 9" \
+--property os_type="linux" \
+--property os_version="centos-7.9" \
+--property release="true" \
+--tag os_type=linux \
+--tag os_version=centos-7.9 \
+FICO-test-barbican-on-rocky-linux-9
+
+
+
+barbicanVM-test-volume-to-image.qcow2
+
+
+--nic net-id=c94ceb9a-c58e-4897-87ef-dac98e4993ca \
+
+openstack server create \
+--flavor FiCo-v4m8-Q1 \
+--image 94051f44-b835-4c33-926b-43e9c5f4f4e5 \
+--nic port-id=243204f2-4cc8-484e-ae08-780978b35835 \
+--security-group fc45a76d-9621-4458-a37b-f5b99f8271a0 \
+--key-name deneil_keypair \
+--user-data password-cloud-init \
+deneil_rocky_barbican_backup_test
+
+

@@ -809,3 +809,16 @@ neutron CLI is deprecated and will be removed in the future. Use openstack CLI i
 
 Internet-210
 
+openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
+openstack port create
+
+
+openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
+
+neutron port-create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
+
+
+neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
+neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
+
+
