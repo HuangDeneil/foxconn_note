@@ -1,3 +1,4 @@
 barbican_required/
 *.pem
 *.pub
+*.token
