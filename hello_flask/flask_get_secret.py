@@ -1,65 +1,48 @@
 from flask import Flask
+from keystoneclient.auth import identity
+from keystoneauth1 import session   
+from barbicanclient import client
+from ssh_test import barbican_key_management as key_work
+import json
+from flask import render_template
 
-app = Flask(__name__)
+application = Flask(__name__)
 
-@app.route("/")
+@application.route("/")
 def hello_world():
-    return "<p>Hello, World!</p>"
+    return render_template('test.html')
+    # return "<p>Flask is live</p>"
 
-
-@app.route('/user/<username>')
-def username(username):
-    return 'i am ' + username
-
-@app.route('/private_url/<order_url>')
-def username(private_url):
-    from keystoneclient.auth import identity
-    from keystoneauth1 import session   
-    from barbicanclient import client
+@application.route('/order_uuid/get_key')
+def get_keypair():
     
-    # We'll use Keystone API v3 for authentication
-    auth = identity.v3.Password(auth_url='http://192.168.77.15:5000/v3',
-                            username='admin',
-                            user_domain_name='Default',
-                            password='admin_foxconn',
-                            project_name='admin',
-                            project_domain_name='Default')
+    ## input secret order uuid
+    uuid = "a906eda8-9f8d-4b4f-9592-4ee1fa3a1fb0"
+    output_key_list = key_work.get_key_from_order(uuid)
+
+    output_html=f"""
+    <p>{output_key_list}</p>
+    """
+    return render_template('table_view.html', data = output_key_list)
+    # return output_html
     
+@application.route('/secret_uuid/get_key')
+def get_secret():
     
-    # Next we'll create a Keystone session using the auth plugin we just created
-    sess = session.Session(auth=auth)
-    
-    # Now we use the session to create a Barbican client
-    barbican = client.Client(session=sess)
-    
-    
-    # get order_obj
-    retrieved_order = barbican.orders.get(order_url)
+    ## input secret order uuid
+    uuid = "35e69867-4ab7-4958-96fa-badd6617dcec"
+    output_key_list = key_work.get_key_from_secret(uuid)
 
-    ## check all inside object
-    # object.__dict__
-
-    # get container_ref
-    container_url = retrieved_order._container_ref
-
-    # get container_obj
-    container_obj = barbican.containers.get(container_url)
-
-    private_key_obj = container_obj.private_key
-    public_key_obj = container_obj.public_key
-
-    private_key = private_key_obj.payload
-    public_key = public_key_obj.payload
-    
-    
-    return private_key
+    output_html=f"""
+    <p>{output_key_list}</p>
+    """
+    return render_template('table_view.html', data = output_key_list)
+    # return output_html
 
 
-
-if __name__ == '__main__':
-    app.debug = True
-    app.run()
-
+if __name__ == "__main__":
+    application.debug = True
+    application.run(host='0.0.0.0', port=8080)
 
 
 
