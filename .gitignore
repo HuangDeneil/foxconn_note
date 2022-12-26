@@ -2,3 +2,6 @@ barbican_required/
 *.pem
 *.pub
 *.token
+hello_flask/
+ssh_test/__pycache__/
+*/__pycache__/
