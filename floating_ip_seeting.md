@@ -810,7 +810,8 @@ neutron CLI is deprecated and will be removed in the future. Use openstack CLI i
 Internet-210
 
 openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
-openstack port create
+
+openstack port create --network 74c70a16-8cb6-427e-bc28-80d8a6ecdffa --fixed-ip ip-address=192.168.200.15 test-FHW-port
 
 
 openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
@@ -821,4 +822,7 @@ neutron port-create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
 neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
 neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
 
+openstack server add port <server> <port>
+openstack server add port deneil-control-node test-FHW-port
 
+openstack server add port f322eabf-500c-4357-8477-b9a5103be71c 6ae64caf-050f-4397-a4a9-f482c03a5378
