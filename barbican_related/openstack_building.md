@@ -62,10 +62,13 @@ bash ~/deneil-dev/myRockyLinuxBarbican.sh
 sudo su
 
 ## update 
-yum update -y
+# yum update -y
+
+sudo dnf update -y
 
 # install editor
-sudo yum install nano vim -y
+# sudo yum install nano vim -y
+sudo dnf install nano vim -y
 ```
 ## 時間配置
 ```bash
@@ -110,6 +113,8 @@ sudo dnf install network-scripts -y
 ## 其他工具 (optional)
 sudo yum install net-tools -y
 ```
+
+
 
 
 ### check openstackclient version
@@ -183,6 +188,14 @@ Query OK, 0 rows affected (0.00 sec)
 
 MariaDB [(none)]> exit
 Bye
+```
+
+
+```bash
+sudo su
+dnf update -y ; dnf install nano vim langpacks-en glibc-all-langpacks -y; timedatectl set-timezone Asia/Taipei ; sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/selinux/config ; dnf install https://repos.fedorapeople.org/repos/openstack/openstack-zed/rdo-release-zed-1.el9s.noarch.rpm -y ; dnf install python3-openstackclient -y ; dnf install -y network-scripts net-tools ; dnf install mariadb-server -y ;systemctl start mariadb.service ; systemctl enable mariadb.service
+
+dnf install openstack-keystone httpd python3-mod_wsgi memcached -y
 ```
 
 
@@ -303,6 +316,18 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL=http://192.168.77.15:5000/v3
 export OS_IDENTITY_API_VERSION=3
 " > admin-openrc.sh
+
+
+# echo -e "
+# export OS_USERNAME=admin
+# export OS_PASSWORD=admin_foxconn
+# export OS_PROJECT_NAME=admin
+# export OS_USER_DOMAIN_NAME=Default
+# export OS_PROJECT_DOMAIN_NAME=Default
+# export OS_AUTH_URL=http://127.0.0.1:5000/v3
+# export OS_IDENTITY_API_VERSION=3
+# " > admin-openrc.sh
+
 ```
 
 ### 測試keystone 是否成功
@@ -603,7 +628,7 @@ openstack endpoint create --region RegionOne key-manager admin http://192.168.77
 
 # Barbican installation
 ```bash
-sudo yum install openstack-barbican-api openstack-barbican-keystone-listener openstack-barbican-worker -y
+sudo dnf install openstack-barbican-api openstack-barbican-keystone-listener openstack-barbican-worker -y
 ```
 
 
@@ -703,6 +728,23 @@ openstack secret store --name mysecret --payload j4=]d21
 openstack secret list
 
 
+
+openstack secret order create \
+asymmetric \
+--name 'user-defined-key-name' \
+--bit-length 2048 \
+--algorithm rsa \
+--mode cbc
+
+openstack secret order create \
+key \
+--name 'secret-sy-001-cbc' \
+--mode cbc \
+--bit-length 256 \
+--algorithm aes 
+
+
+
 openstack secret order create asymmetric --name 'secret-asy-2048' --mode ctr --bit-length 2048 --algorithm rsa
 # http://192.168.77.15:9311/v1/orders/6c285ca3-f30c-4172-966a-325dfc568184
 
@@ -719,7 +761,7 @@ openstack secret order create asymmetric --name 'secret-asy-8192' --mode ctr --b
 
 
 
- 
+
 
 # [bug] create successful but cannot view container & secret 
 openstack secret order create asymmetric --name 'test-ssh-DSA' --mode ctr --bit-length 1024 --algorithm dsa
@@ -739,6 +781,78 @@ rocky \
 192.168.77.5 \
 example-rsa.pem \
 example-rsa.pem-test
+```
+
+
+
+```sql
+[rocky@deneil-control-node ~]$ openstack secret order list
++--------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
+| Order href                                                               | Type       | Container href                                                               | Secret href | Created                   | Status | Error code | Error message |
++--------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
+| http://192.168.77.15:9311/v1/orders/a906eda8-9f8d-4b4f-9592-4ee1fa3a1fb0 | Asymmetric | http://192.168.77.15:9311/v1/containers/a60f0605-25cd-458a-8cc9-0c5d7cff589c | N/A         | 2022-12-19T13:22:03+00:00 | ACTIVE | None       | None          |
++--------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
+
+
+[rocky@deneil-control-node ~]$ openstack secret order get http://192.168.77.15:9311/v1/orders/a906eda8-9f8d-4b4f-9592-4ee1fa3a1fb0
++----------------+------------------------------------------------------------------------------+
+| Field          | Value                                                                        |
++----------------+------------------------------------------------------------------------------+
+| Order href     | http://192.168.77.15:9311/v1/orders/a906eda8-9f8d-4b4f-9592-4ee1fa3a1fb0     |
+| Type           | Asymmetric                                                                   |
+| Container href | http://192.168.77.15:9311/v1/containers/a60f0605-25cd-458a-8cc9-0c5d7cff589c |
+| Secret href    | N/A                                                                          |
+| Created        | 2022-12-19T13:22:03+00:00                                                    |
+| Status         | ACTIVE                                                                       |
+| Error code     | None                                                                         |
+| Error message  | None                                                                         |
++----------------+------------------------------------------------------------------------------+
+
+[rocky@deneil-control-node ~]$ openstack secret container get http://192.168.77.15:9311/v1/containers/a60f0605-25cd-458a-8cc9-0c5d7cff589c
++----------------+------------------------------------------------------------------------------+
+| Field          | Value                                                                        |
++----------------+------------------------------------------------------------------------------+
+| Container href | http://192.168.77.15:9311/v1/containers/a60f0605-25cd-458a-8cc9-0c5d7cff589c |
+| Name           | first_key                                                                    |
+| Created        | 2022-12-19 13:22:04+00:00                                                    |
+| Status         | ACTIVE                                                                       |
+| Type           | rsa                                                                          |
+| Public Key     | http://192.168.77.15:9311/v1/secrets/0112ef6d-9d0d-4300-b65a-d0d21145fa77    |
+| Private Key    | http://192.168.77.15:9311/v1/secrets/238ab6c6-61d1-4c73-81df-166836f5e010    |
+| PK Passphrase  | None                                                                         |
+| Consumers      | None                                                                         |
++----------------+------------------------------------------------------------------------------+
+
+
+
++---------------------------------------------------+------------+-----------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
+| Order href                                        | Type       | Container href                                            | Secret href | Created                   | Status | Error code | Error message |
++---------------------------------------------------+------------+-----------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
+| http://{barbican endpoint}/v1/orders/{order uuid} | Asymmetric | http://{barbican endpoint}/v1/containers/{container uuid} | N/A         | 2022-12-19T13:22:03+00:00 | ACTIVE | None       | None          |
++---------------------------------------------------+------------+-----------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
+
+
+
+openstack secret store \
+--payload '<your password>' \
+--name 'passphrase test-expiration-2' \
+--algorithm aes \
+--secret-type passphrase \
+--mode cbc \
+--expiration 2022-12-28T02:50
+--bit-length 256 \
+--payload-content-type "text/plain" \
+
+2022-12-28T02:39:51+00:00
+
+
+openstack secret store \
+--file input_file.pem \
+--secret-type private \
+--name test_no_contenet_type \
+--algorithm rsa \
+--bit-length 2048 
+--payload-content-type "text/plain" \
 ```
 
 
@@ -968,7 +1082,129 @@ netstat -tulpn
 
 
 
-
+## fail
 cat ~/.ssh/id_rsa.pub | ssh username@remote_host "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+
+#### ####################################
+
+
+
+curl -g -i -X GET http://192.168.77.15:5000/v3 -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14"
+
+curl -g -i -X GET http://192.168.77.15:9311 -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14"
+
+# 查token
+```bash
+openstack token issue
+```
+
+```bash
+[rocky@deneil-control-node ~]$ openstack token issue
+
++------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Field      | Value                                                                                                                                                                                   |
++------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| expires    | 2022-12-29T04:21:15+0000                                                                                                                                                                |
+| id         | gAAAAABjrQerU-YZWTAQWViR2tKAKqMbr0ZTPEp_iozAi4NMEe0neZaUJC2AZXFHK48ed88WcM-uB8HcSmP8J61ztn3z12ii_hdC_zprS01nu9MJdixpJopAOA1RVurwk_SYBupzbsIqvDA-2yi8Bmec8YCReIv6tdA_znuR3Lr4-n12Rne4k3w |
+| project_id | ba29d252fcba4a2b88189ab78aca0100                                                                                                                                                        |
+| user_id    | b0522483156240dea3348a31c0144693                                                                                                                                                        |
++------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+```
+
+```bash
+
+curl -g -i -X GET http://192.168.77.15:5000/v3 -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14"
+
+
+
+token="gAAAAABjrRnmChRaKU9iZormGzgmbjDGc2sGHaRzpkMMU1kEShKEBMPWkEsDmWZv9oYX6knovD6ruv9SVOFAqR-fhpDryDgG6PNII5eAZtFZGD04iLgKTuwFJfFz-T4t8Btmgqth2JSR8XEl5nimk-DTk-LrXXWkoNOsDXJ1WBEg7fpVV0qzp8g"
+
+curl -g -i -X GET "http://192.168.77.15:9311/v1/orders?limit=10&offset=0" -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: $token"
+
+uuid="http://192.168.77.15:9311/v1/containers/a60f0605-25cd-458a-8cc9-0c5d7cff589c"
+## desc 印出
+curl -g -i -X GET http://192.168.77.15:9311/v1/secrets?sort=created:desc -H "Accept: application/json" -H "X-Auth-Token: $token"
+
+## 所有的secrets
+curl -g -i -X GET http://192.168.77.15:9311/v1/secrets -H "Accept: application/json" -H "X-Auth-Token: $token"
+
+
+## 所有的 containers
+curl -g -i -X GET http://192.168.77.15:9311/v1/containers -H "Accept: application/json" -H "X-Auth-Token: $token"
+
+
+## 所有的orders
+curl -g -i -X GET http://192.168.77.15:9311/v1/orders -H "Accept: application/json" -H "X-Auth-Token: $token"
+
+curl -g -i -X GET http://192.168.77.15:9311/v1/secrets/0112ef6d-9d0d-4300-b65a-d0d21145fa77 -H "Accept: application/json" -H "X-Auth-Token: $token"
+
+
+
+GET /v1/secrets/{uuid}/metadata
+Headers:
+    Accept: application/json
+    X-Auth-Token: <token>
+
+## create key
+curl -g -i -X POST http://192.168.77.15:9311/v1/secrets -H "Accept: application/json" -H "X-Auth-Token: $token" 
+
+POST /v1/secrets
+Headers:
+    Content-Type: application/json
+    X-Auth-Token: <token>
+
+Content:
+{
+    "name": "AES key",
+    "expiration": "2015-12-28T19:14:44.180394",
+    "algorithm": "aes",
+    "bit_length": 256,
+    "mode": "cbc",
+    "payload": "YmVlcg==",
+    "payload_content_type": "application/octet-stream",
+    "payload_content_encoding": "base64"
+}
+
+curl -g -i -X POST http://192.168.77.15:9311/v1/secrets -H "Accept: application/json" -H "X-Auth-Token: $token" -d {"name": "AES key",    "expiration": "2015-12-28T19:14:44.180394","algorithm": "aes","bit_length": 256,"mode": "cbc","payload": "YmVlcg==","payload_content_type": "application/octet-stream", "payload_content_encoding": "base64"}
+
+curl -g -i -X POST http://192.168.77.15:9311/v1/secrets/ -H "Content-Type: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: {SHA256}b2b8cdc4a6ecace95bcf2599d30aba820af0eabd843704c1d825ec97f485a774" -d '{"name": "test", "algorithm": "aes", "mode": "cbc", "bit_length": 256, "secret_type": "opaque"}'
+```
+
+
+
+
+
+
+
+
+# openstack secret order create
+```bash
+openstack secret order create asymmetric --name 'secret-asy-2024' --mode ctr --bit-length 2048 --algorithm rsa --debug
+
+
+token="gAAAAABjrR5wELjBjZECchQSy5rgs0EiwGBVBd_MBAJcWwo6pUxV5bU43Qk0wpzGHs95F9zHB67IyxFDICb99IGBlTVmZa0Frx8Ug0nQxppPags88-KN6TX4fvLRWO852u52jdGkNh-y4WO3lDv6pLyBBGJYNO6m_I7p3F3gdmyegMoDCTYKB50"
+
+curl -g -i -X POST http://192.168.77.15:9311/v1/secrets -H "Content-Type: application/json" -H "X-Auth-Token: $token" -d '{"type": "asymmetric", "meta": {"name": "secret-asy-2024-test=api", "algorithm": "rsa", "bit_length": 2048, "payload_content_type": "application/octet-stream"}}'
+
+curl -g -i -X POST http://192.168.77.15:9311/v1/orders/ -H "Content-Type: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: $token" -d '
+{
+    "type": "asymmetric", 
+    "meta": 
+    {
+        "name": "secret-asy-test", 
+        "algorithm": "rsa", 
+        "bit_length": 2048, 
+        "payload_content_type": "application/octet-stream"
+    }
+}'
+
+```
+
+
+
+
+curl -g -i -X GET "http://192.168.77.15:9311/v1/orders?limit=10&offset=0" -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: {SHA256}3319e10ceab7dc36c41cde92070f2b8c6e539da683aae99d33742173ad3de443"
+
 
 
