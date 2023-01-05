@@ -191,12 +191,6 @@ Bye
 ```
 
 
-```bash
-sudo su
-dnf update -y ; dnf install nano vim langpacks-en glibc-all-langpacks -y; timedatectl set-timezone Asia/Taipei ; sed -i 's#SELINUX=enforcing#SELINUX=disabled#g' /etc/selinux/config ; dnf install https://repos.fedorapeople.org/repos/openstack/openstack-zed/rdo-release-zed-1.el9s.noarch.rpm -y ; dnf install python3-openstackclient -y ; dnf install -y network-scripts net-tools ; dnf install mariadb-server -y ;systemctl start mariadb.service ; systemctl enable mariadb.service
-
-dnf install openstack-keystone httpd python3-mod_wsgi memcached -y
-```
 
 
 ## install keystone
@@ -329,6 +323,10 @@ export OS_IDENTITY_API_VERSION=3
 # " > admin-openrc.sh
 
 ```
+
+
+
+
 
 ### 測試keystone 是否成功
 ```bash
@@ -785,7 +783,7 @@ example-rsa.pem-test
 
 
 
-```sql
+```bash
 [rocky@deneil-control-node ~]$ openstack secret order list
 +--------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+-------------+---------------------------+--------+------------+---------------+
 | Order href                                                               | Type       | Container href                                                               | Secret href | Created                   | Status | Error code | Error message |
@@ -1011,72 +1009,8 @@ rsa
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Error message
-```bash
-[root@deneil-rocky-keystone-test rocky]# openstack secret list
-Failed to contact the endpoint at http://192.168.100.11:9311 for discovery. 
-Fallback to using that endpoint as the base url.
-Unable to establish connection to http://192.168.100.11:9311/secrets: HTTPConnectionPool(host='192.168.100.11', port=9311): Max retries exceeded with url: /secrets?limit=10&offset=0 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7ff184e9e100>: Failed to establish a new connection: [Errno 111] Connection refused'))
-
-```
-
-
-vim /etc/httpd/conf.d/wsgi-barbican.conf
-新增 `Listen 9311` ，再 `systemctl restart httpd` 之後
-
-```bash
-[root@deneil-rocky-keystone-test rocky]# openstack secret list
-Failed to contact the endpoint at http://192.168.100.11:9311 for discovery. 
-Fallback to using that endpoint as the base url.
-4xx Client error: b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n</body></html>\n'    
-b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n</body></html>\n'
-```
-
-
-
-```bash
-[root@deneil-barbican-test-keystone conf.d]# openstack endpoint list
-+----------------------------------+-----------+--------------+--------------+---------+-----------+------------------------------+
-| ID                               | Region    | Service Name | Service Type | Enabled | Interface | URL                          |
-+----------------------------------+-----------+--------------+--------------+---------+-----------+------------------------------+
-| 63fd73bf135740d991734a62a50e1580 | RegionOne | barbican     | key-manager  | True    | admin     | http://192.168.77.8:9311     |
-| 7bcd950309664b8a9a1c85d38e66f25a | RegionOne | keystone     | identity     | True    | internal  | http://192.168.77.8:5000/v3/ |
-| 86ee10b51d1e4aa8b0db5f33a9f40886 | RegionOne | keystone     | identity     | True    | admin     | http://192.168.77.8:5000/v3/ |
-| 9fafc5b7011c45538574c3c9bfb08e2c | RegionOne | barbican     | key-manager  | True    | public    | http://192.168.77.8:9311     |
-| b426e6b08243440f820b3693d1f7de92 | RegionOne | keystone     | identity     | True    | public    | http://192.168.77.8:5000/v3/ |
-| e75000e70c86405a9790e9adb3a5284a | RegionOne | barbican     | key-manager  | True    | internal  | http://192.168.77.8:9311     |
-+----------------------------------+-----------+--------------+--------------+---------+-----------+------------------------------+
-```
-
-
-
-
-
-
-
-
----
-
-
-
-
 yum install net-tools -y
-
+## check tcp port
 netstat -tulpn
 
 
@@ -1084,127 +1018,5 @@ netstat -tulpn
 
 ## fail
 cat ~/.ssh/id_rsa.pub | ssh username@remote_host "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
-
-
-#### ####################################
-
-
-
-curl -g -i -X GET http://192.168.77.15:5000/v3 -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14"
-
-curl -g -i -X GET http://192.168.77.15:9311 -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14"
-
-# 查token
-```bash
-openstack token issue
-```
-
-```bash
-[rocky@deneil-control-node ~]$ openstack token issue
-
-+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Field      | Value                                                                                                                                                                                   |
-+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| expires    | 2022-12-29T04:21:15+0000                                                                                                                                                                |
-| id         | gAAAAABjrQerU-YZWTAQWViR2tKAKqMbr0ZTPEp_iozAi4NMEe0neZaUJC2AZXFHK48ed88WcM-uB8HcSmP8J61ztn3z12ii_hdC_zprS01nu9MJdixpJopAOA1RVurwk_SYBupzbsIqvDA-2yi8Bmec8YCReIv6tdA_znuR3Lr4-n12Rne4k3w |
-| project_id | ba29d252fcba4a2b88189ab78aca0100                                                                                                                                                        |
-| user_id    | b0522483156240dea3348a31c0144693                                                                                                                                                        |
-+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-```
-
-```bash
-
-curl -g -i -X GET http://192.168.77.15:5000/v3 -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14"
-
-
-
-token="gAAAAABjrRnmChRaKU9iZormGzgmbjDGc2sGHaRzpkMMU1kEShKEBMPWkEsDmWZv9oYX6knovD6ruv9SVOFAqR-fhpDryDgG6PNII5eAZtFZGD04iLgKTuwFJfFz-T4t8Btmgqth2JSR8XEl5nimk-DTk-LrXXWkoNOsDXJ1WBEg7fpVV0qzp8g"
-
-curl -g -i -X GET "http://192.168.77.15:9311/v1/orders?limit=10&offset=0" -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: $token"
-
-uuid="http://192.168.77.15:9311/v1/containers/a60f0605-25cd-458a-8cc9-0c5d7cff589c"
-## desc 印出
-curl -g -i -X GET http://192.168.77.15:9311/v1/secrets?sort=created:desc -H "Accept: application/json" -H "X-Auth-Token: $token"
-
-## 所有的secrets
-curl -g -i -X GET http://192.168.77.15:9311/v1/secrets -H "Accept: application/json" -H "X-Auth-Token: $token"
-
-
-## 所有的 containers
-curl -g -i -X GET http://192.168.77.15:9311/v1/containers -H "Accept: application/json" -H "X-Auth-Token: $token"
-
-
-## 所有的orders
-curl -g -i -X GET http://192.168.77.15:9311/v1/orders -H "Accept: application/json" -H "X-Auth-Token: $token"
-
-curl -g -i -X GET http://192.168.77.15:9311/v1/secrets/0112ef6d-9d0d-4300-b65a-d0d21145fa77 -H "Accept: application/json" -H "X-Auth-Token: $token"
-
-
-
-GET /v1/secrets/{uuid}/metadata
-Headers:
-    Accept: application/json
-    X-Auth-Token: <token>
-
-## create key
-curl -g -i -X POST http://192.168.77.15:9311/v1/secrets -H "Accept: application/json" -H "X-Auth-Token: $token" 
-
-POST /v1/secrets
-Headers:
-    Content-Type: application/json
-    X-Auth-Token: <token>
-
-Content:
-{
-    "name": "AES key",
-    "expiration": "2015-12-28T19:14:44.180394",
-    "algorithm": "aes",
-    "bit_length": 256,
-    "mode": "cbc",
-    "payload": "YmVlcg==",
-    "payload_content_type": "application/octet-stream",
-    "payload_content_encoding": "base64"
-}
-
-curl -g -i -X POST http://192.168.77.15:9311/v1/secrets -H "Accept: application/json" -H "X-Auth-Token: $token" -d {"name": "AES key",    "expiration": "2015-12-28T19:14:44.180394","algorithm": "aes","bit_length": 256,"mode": "cbc","payload": "YmVlcg==","payload_content_type": "application/octet-stream", "payload_content_encoding": "base64"}
-
-curl -g -i -X POST http://192.168.77.15:9311/v1/secrets/ -H "Content-Type: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: {SHA256}b2b8cdc4a6ecace95bcf2599d30aba820af0eabd843704c1d825ec97f485a774" -d '{"name": "test", "algorithm": "aes", "mode": "cbc", "bit_length": 256, "secret_type": "opaque"}'
-```
-
-
-
-
-
-
-
-
-# openstack secret order create
-```bash
-openstack secret order create asymmetric --name 'secret-asy-2024' --mode ctr --bit-length 2048 --algorithm rsa --debug
-
-
-token="gAAAAABjrR5wELjBjZECchQSy5rgs0EiwGBVBd_MBAJcWwo6pUxV5bU43Qk0wpzGHs95F9zHB67IyxFDICb99IGBlTVmZa0Frx8Ug0nQxppPags88-KN6TX4fvLRWO852u52jdGkNh-y4WO3lDv6pLyBBGJYNO6m_I7p3F3gdmyegMoDCTYKB50"
-
-curl -g -i -X POST http://192.168.77.15:9311/v1/secrets -H "Content-Type: application/json" -H "X-Auth-Token: $token" -d '{"type": "asymmetric", "meta": {"name": "secret-asy-2024-test=api", "algorithm": "rsa", "bit_length": 2048, "payload_content_type": "application/octet-stream"}}'
-
-curl -g -i -X POST http://192.168.77.15:9311/v1/orders/ -H "Content-Type: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: $token" -d '
-{
-    "type": "asymmetric", 
-    "meta": 
-    {
-        "name": "secret-asy-test", 
-        "algorithm": "rsa", 
-        "bit_length": 2048, 
-        "payload_content_type": "application/octet-stream"
-    }
-}'
-
-```
-
-
-
-
-curl -g -i -X GET "http://192.168.77.15:9311/v1/orders?limit=10&offset=0" -H "Accept: application/json" -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" -H "X-Auth-Token: {SHA256}3319e10ceab7dc36c41cde92070f2b8c6e539da683aae99d33742173ad3de443"
-
 
 
