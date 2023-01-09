@@ -91,7 +91,8 @@ curl -g -i -X GET http://127.0.0.1:9311/v1/orders -H "Accept: application/json" 
 curl -g -i -X GET http://localhost:9311/v1/orders/99db6b8f-0b83-4173-9003-bb3b17323fa3 -H "Accept: application/json" -H "X-Auth-Token: $token"
 
 
-## openstack secret get --payload http://localhost:9311/v1/secrets/f4006dde-78b5-45e4-9f9e-68260955576c
+## openstack secret get --payload 
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
 curl -g -i \
 -X GET http://127.0.0.1:9311/v1/secrets/f4006dde-78b5-45e4-9f9e-68260955576c/payload \
 -H "Accept: text/plain" \
@@ -106,12 +107,17 @@ curl \
 openstack secret get http://192.168.77.15:9311/v1/secrets/78399617-df7e-4c17-a48c-7e5cc7fd8510 \
 --file test_download.pem --debug
 
-curl -g -i \
--X GET http://192.168.77.15:9311/v1/secrets/78399617-df7e-4c17-a48c-7e5cc7fd8510/payload -H "Accept: text/plain" \
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+curl -X GET http://192.168.77.15:9311/v1/secrets/238ab6c6-61d1-4c73-81df-166836f5e010/payload -H "Accept: text/plain" \
+-H "X-Auth-Token: $token"
+
+curl -g -i -X GET \
+http://192.168.77.15:9311/v1/secrets/238ab6c6-61d1-4c73-81df-166836f5e010/payload \
+-H "Accept: text/plain" \
 -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" \
--H "X-Auth-Token: {SHA256}7f56f6f6d455836ac3fdfb5a466a80f9dc2f21e16bfa8880e101639582b98395"
 
 
+http://192.168.77.15:9311/v1/secrets/238ab6c6-61d1-4c73-81df-166836f5e010
 ```
 
 ## openstack secre store
@@ -151,6 +157,11 @@ curl -g -i \
 "payload": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCoJ9aTaEQAfSZN\nJzf9zbV65Zu/mxrrwqPkUV1iy1vtfA9FbK9zOQuDjBjVT245LGjisSlZcWMjc1de\nF5sw7sL/mwIXg9aN4Ix1OPF0cVYVWNP2p7iIe7VxAwSeeq4Xo35LSIX34GADvjQo\nmqkkeg0DVALtaUO2J26O2WULRBBzBrMi9wZDk+dtEy+DWh8mhCf/CUlTdlxNTX50\n99u1O+2eWpxPpRPr7KPMNZRU4QYPDj3Ccx0F0iYPK4lUbY9KZhfkFV1JSj+0yY48\nByxJUYZ5GswcaDlyaXVPh2M7fDqOjs6GdBPR+qp8UVMSowxTDxX0n34ngWdoEi0r\nj6YJV1B3AgMBAAECggEAOBAgMEFA+tC+5lY/CrV83h6TUMyLqzLXpZWjBv86BPGp\nvcHAtS+9sPwSg3vaCeHOjlX2rUVqgjVAWbSRHz1bchDiH6jq7Z6B9csoZWQsCS32\nbXP5yDdGhQk2jwfj5ymxP7RMRhpeqKDPjwIRhoHSuNtXpoPD+YUoDSRZ1em5ej+k\ne9xrtqrWJOuFc/rwcL+2FMq4vtXjd0cA9Ox2WIAHr6jiMUx61DHRpdmSYLy7qU/k\nwg/VUipzw/OzXFoOMbFqCa4wncAwIsLZueW3awfTY3e8L6pYYAK8WbuI5+Qvebci\nVaCmflS92ZlwVgclF227y6kivfhCZia4fM91gtMeUQKBgQDmRyN5hMg1OAnkUO6e\npoV8ST+RlPGSyQFwFcacvgPcHgJeyeEB3CWcT4u0J4x82XAKe8dXNpXG97eG1gjA\noIv+ty01nDfUjJiX6/iv2FkiEnYh/VehbC62pGk/vfuruER5remh0CbC6+3Z263F\njM49EmsVmLNoD2Wt6zrWyPVpewKBgQC68Eu3czIuKvzYwix2r3eemv7GOw4TGsZq\n+liBArhP7dyKuv8kcr+sXKP30Rw/F4kuNxTZ6iOUp0++ifPtMu/GzCDDsLfOc+nc\nvTYwUuROPfmEhOtt73aoTu+GH9RoJrQa6WyRRyxoLlT4M50EPivQXHztYjluXV7h\nlFxf359ONQKBgQCi3EEcmmo2KVHlpc99aOwTQIKy5ZIMbBiWOvBivohgTuECROjb\nteTrrd5yJV5YljeFUpFi/vni5CNqO0mpYmJgXRCeT8O0kVMCbyNMykgPrtrZoyEs\nyyQmjBTbvfOWORZEsFkB1gLz7IQlhhZaFwFtc+9EMOEBgZI59JmCelIGrQKBgQCM\njjigCqFkTTYn1HeSFYSfYHLHoYeHnc4qiWkaN21Vy8bTGJ7WTOEJO+6dWkEevxeK\nBChNYNq33sT6wscBRhc7JihMewb41/ay3iFsXCcFHVwK49YQpshU7GT0N+KBHPi2\nc2QKJ7Wf75Y7uLMKiaRv2dqksgH0lYfNnLuH6p/hMQKBgF9yurywod2Hb9uTGzGS\nHLFZI44QnKpJr/kSPhyh90o/52KTlhnN3C8mJ81tLJhAOH1L7beeG2hiYyy+gQCU\n/Rejy2CpQkkyyc9AEzFcxHzluH03uwDzyLhDYZ7JweY7V8NVR073QM+wbc9oo3HU\nGUUTiasF3KtqIF3rpqAM/l0f\n-----END PRIVATE KEY-----\n", 
 "payload_content_type": "text/plain" 
 }'
+
+
+
+
+
 ```
 
 

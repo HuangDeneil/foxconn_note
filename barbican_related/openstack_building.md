@@ -845,12 +845,12 @@ openstack secret store \
 
 
 openstack secret store \
---file input_file.pem \
+--file first_key.pem \
 --secret-type private \
---name test_no_contenet_type \
+--name first_key \
 --algorithm rsa \
 --bit-length 2048 
---payload-content-type "text/plain" \
+--payload-content-type "text/plain" 
 ```
 
 
