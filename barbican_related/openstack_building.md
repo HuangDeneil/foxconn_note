@@ -750,7 +750,7 @@ openstack secret order create asymmetric --name 'secret-asy-2048-2' --mode ctr -
 # http://192.168.77.15:9311/v1/orders/cb2560b6-bafa-43e9-aa2c-74d2df6d2e37
 
 
-openstack secret order create asymmetric --name 'test-repeat' --mode ctr --bit-length 2048 --algorithm rsa 
+openstack secret order create asymmetric --name 'test' --mode ctr --bit-length 2048 --algorithm rsa 
 
 
 openstack secret order create asymmetric --name 'secret-asy-4096' --mode ctr --bit-length 4096 --algorithm rsa 
