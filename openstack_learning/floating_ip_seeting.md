@@ -1,5 +1,55 @@
 neutron router-create deneil-router
 
+
+
+
+#### VM 連接兩個subnet
+## 在 Internet-210 連接的subnet上VM 
+
+
+## 建立subnet上指定port方法
+```bash
+openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
+neutron port-create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
+```
+
+## 在FHW-private_network上建立192.168.200.15 port
+openstack port create --network 74c70a16-8cb6-427e-bc28-80d8a6ecdffa --fixed-ip ip-address=192.168.200.15 test-FHW-port
+
+neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
+neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
+
+
+openstack port create --network 764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 --fixed-ip ip-address=192.168.77.250 test-net-port
+
+
+
+### 將port加到VM上
+openstack server add port <server> <port>
+openstack server add port deneil-control-node test-FHW-port
+openstack server add port f322eabf-500c-4357-8477-b9a5103be71c 6ae64caf-050f-4397-a4a9-f482c03a5378
+
+openstack server add port deneil-test-us-net deneil_centOS_port
+
+openstack server remove port <server> <port>
+openstack server remove port deneil-test-us-net deneil_centOS_port
+
+openstack server add port deneil-test-us-net test-net-port
+openstack server remove port deneil-test-us-net test-net-port
+
+
+route add -net 192.168.77.0/24 dev eth0
+route del -net 192.168.77.0/24 dev eth0
+
+route add -net 192.168.77.0 netmask 255.255.255.0 gw 172.19.0.124 dev eth0
+route del -net 192.168.77.0 netmask 255.255.255.0 gw 172.19.0.124 dev eth0
+
+
+## 192.168.77.18
+ded41dd2-961d-4c33-bcbc-809e73fe847a
+
+
+
 ## 因為已有public network (FHW)
 ## 所以只需要建立新的floating ip或是將以建立的floating ip 拉到instance 上面即可?
 
@@ -23,6 +73,13 @@ FHW
 neutron floatingip-create \
 --floating-ip-address 10.67.46.128 \
 FHW 
+
+openstack floating ip create \
+--floating-ip-address 172.19.0.141 \
+--description 'test us-net to tanent' \
+--project admin \
+--subnet 2dedad4a-a94b-4795-a794-7fd31f51a10c \
+us_network
 
 
 ``` bash
@@ -805,24 +862,3 @@ neutron CLI is deprecated and will be removed in the future. Use openstack CLI i
 +------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 ```
-
-
-Internet-210
-
-openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
-
-openstack port create --network 74c70a16-8cb6-427e-bc28-80d8a6ecdffa --fixed-ip ip-address=192.168.200.15 test-FHW-port
-
-
-openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
-
-neutron port-create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
-
-
-neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
-neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
-
-openstack server add port <server> <port>
-openstack server add port deneil-control-node test-FHW-port
-
-openstack server add port f322eabf-500c-4357-8477-b9a5103be71c 6ae64caf-050f-4397-a4a9-f482c03a5378

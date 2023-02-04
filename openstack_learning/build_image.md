@@ -128,6 +128,7 @@ deneil_rocky_barbican_test-cloud-init
 
 
 
+
 ```config
 #cloud-config
 password: foxconn
@@ -377,6 +378,24 @@ openstack image create \
 --tag os_version=centos-7.9 \
 FICO-CentOS-7.9-2009-1-1
 
+
+
+# barbicanVM-on-Rocky-linux
+openstack image create \
+--public \
+--disk-format qcow2 \
+--container-format bare \
+--file barbicanVM-localhost-version.qcow2 \
+--property title="barbicanVM-localhost-version (Rocky linux 9)" \
+--property os_version="rocky-linux-9.0" \
+--property type="linux" \
+--property release="true" \
+--tag os_type=linux \
+--tag os_version=Rocky_linux-9.0 \
+barbicanVM-on-Rocky-linux
+
+
+
 # note : 
 ## Metadata:
 --property  os_type="linux"        >>> 建image時能夠讀到
@@ -413,6 +432,12 @@ openstack server create \
 --key-name deneil_keypair \
 --user-data password-cloud-init \
 deneil_rocky_linux_9
+
+
+
+
+
+
 
 
 ## KH-testBed.L
@@ -472,5 +497,55 @@ openstack server create \
 --key-name deneil_keypair \
 --user-data password-cloud-init \
 deneil_rocky_barbican_backup_test
+
+
+
+
+
+### backup
+```bash
+# 要用admin 身分操作不然可能會卡權限 
+source ~/admin-openrc.sh
+
+volume_id="82d7aba7-e509-49cf-ae6d-ee67bb1270a3"
+
+# VM 關機後改變 volume 狀態 從 in-use 變成 available 
+cinder reset-state --state available ${volume_id}
+
+# 將volume 轉換成 image
+cinder upload-to-image ${volume_id} barbicanVM-test-volume-to-image --force=True --disk-format=qcow2
+
+image_id=""
+
+# download image 
+openstack image save --file barbicanVM-test-volume-to-image.qcow2 $image_id
+
+
+
+```
+
+
+
+openstack server create \
+--flavor FiCo-v2m4-Q10 \
+--availability-zone Availability-Zone-1:dct-queens-com-002 \
+--image ef734296-e550-4198-9c66-84ad2be5fce4 \
+--nic net-id=ca85ca51-0324-494a-9046-bf5876654516 \
+--security-group 6d72cd08-786a-4705-95e7-096a900928da \
+--key-name deneil-keypair \
+--user-data password-cloud-init \
+deneil_test_key_rotation
+
+
+
+nova boot \
+  --flavor FiCo-v1m2-Q1 \
+  --availability-zone minsky-az:dct-queens-com-007 \
+  --security-groups default \
+  --nic net-id=9c68fbfe-8519-4472-bf1b-1419322db0f9 \
+  --boot-volume 9f00c49e-d7bc-48ee-940b-a54cb890fb5c \
+  --poll khq-st-minsky-vm-test6
+
+
 
 
