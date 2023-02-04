@@ -12,7 +12,7 @@ sudo systemctl enable mariadb.service
 
 ######
 ### setting root password & mysql_secure_installation.sql
-sudo cat > mysql_secure_installation.sql << EOF
+sudo echo -e "
 -- Kill the anonymous users
 DELETE FROM mysql.user WHERE User='';
 -- allow remote login for root
@@ -35,30 +35,30 @@ GRANT ALL PRIVILEGES ON barbican.* TO 'barbican'@'%' IDENTIFIED BY 'foxconn';
 
 -- Make our changes take effect
 FLUSH PRIVILEGES;
-EOF
-sudo mysql -sfu root < mysql_secure_installation.sql
+" > /root/mysql_secure_installation.sql
+sudo mysql -sfu root < /root/mysql_secure_installation.sql
 
-yum install -y python2-qpid-proton-0.22.0-1.el7.x86_64
-yum install openstack-keystone httpd mod_wsgi -y
-sudo cp /etc/keystone/keystone.conf /etc/keystone/keystone_backup.conf
-sudo cat > keystone_conf_init.pl << EOF
+sudo yum install -y python2-qpid-proton-0.22.0-1.el7.x86_64
+sudo yum install openstack-keystone httpd mod_wsgi -y
+sudo mv /etc/keystone/keystone.conf /etc/keystone/keystone_backup.conf
+sudo echo -e '
 #!/usr/bin/perl
 while(<>)
 {
     ## reflash bottum
-    if   (/^\[(.+)\]/){\$database = 0;\$token = 0;}
+    if   (/^\[(.+)\]/){$database = 0; $token = 0;}
     
     # bottum detatch
-    if   (/^\[database\]/){\$database = 1 }
-    if   (/^\[token\]/){\$token = 1}
+    if   (/^\[database\]/){$database = 1 }
+    if   (/^\[token\]/){$token = 1}
     
     # add new message to conf
-    if   (/^#connection =/ && \$database == 1 ){print "connection = mysql+pymysql://keystone:foxconn\@127.0.0.1/keystone\n";}
-    elsif(/^#provider =/ && \$token == 1 ){print "provider = fernet\n";}
+    if   (/^#connection =/ && $database == 1 ){print "connection = mysql+pymysql://keystone:foxconn\@127.0.0.1/keystone\n";}
+    elsif(/^#provider =/ && $token == 1 ){print "provider = fernet\n";}
     else{print ; }
 }
-EOF
-sudo perl keystone_conf_init.pl /etc/keystone/keystone_backup.conf > /etc/keystone/keystone.conf
+' > /root/keystone_conf_init.pl 
+sudo perl /root/keystone_conf_init.pl /etc/keystone/keystone_backup.conf > /etc/keystone/keystone.conf
 
 sudo su -s /bin/sh -c "keystone-manage db_sync" keystone 
 sudo keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone; keystone-manage credential_setup --keystone-user keystone --keystone-group keystone; keystone-manage bootstrap --bootstrap-password admin_foxconn --bootstrap-admin-url http://127.0.0.1:5000/v3/ --bootstrap-internal-url http://127.0.0.1:5000/v3/ --bootstrap-public-url http://127.0.0.1:5000/v3/ --bootstrap-region-id RegionOne
@@ -92,7 +92,17 @@ sudo systemctl start memcached.service
 
 
 ### Must need to reboot 
-. admin-openrc.sh
+echo -e '
+#!/bin/bash
+
+export OS_USERNAME=admin
+export OS_PASSWORD=admin_foxconn
+export OS_PROJECT_NAME=admin
+export OS_USER_DOMAIN_NAME=Default
+export OS_PROJECT_DOMAIN_NAME=Default
+export OS_AUTH_URL=http://127.0.0.1:5000/v3
+export OS_IDENTITY_API_VERSION=3
+
 openstack project create service
 openstack user create --domain default --project service --password admin_foxconn barbican
 openstack role add --project service --user barbican admin
@@ -157,10 +167,35 @@ password = admin_foxconn";}
 }
 EOF
 sudo perl barbican_conf_init.pl /etc/barbican/barbican_backup.conf > /etc/barbican/barbican.conf
-
 sudo su -s /bin/sh -c "barbican-manage db upgrade" barbican
-
-
 sudo systemctl enable --now openstack-barbican-api
 sudo systemctl start --now openstack-barbican-api
 
+sudo systemctl disable barbican_build_up.service
+sudo systemctl stop barbican_build_up
+'  > /root/startup.sh
+sudo chmod +x /root/startup.sh
+
+
+sudo echo -e '
+[Unit]
+Description=Building barbican server after reboot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/bin/bash /root/startup.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+' > /etc/systemd/system/barbican_build_up.service
+
+sudo chmod 644 /etc/systemd/system/barbican_build_up.service
+sudo systemctl daemon-reload
+# sudo systemctl start barbican_build_up.service
+# sudo systemctl status barbican_build_up
+sudo systemctl enable barbican_build_up.service
+
+sudo reboot 

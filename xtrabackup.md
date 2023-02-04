@@ -244,8 +244,6 @@ xtrabackup \
 --password=foxconn
 
 
-
-
 ## 全量備份-備份至指定資料夾
 innobackupex \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \

@@ -12,7 +12,7 @@ sudo systemctl enable mariadb.service
 
 ######
 ### setting root password & mysql_secure_installation.sql
-sudo cat > mysql_secure_installation.sql << EOF
+sudo cat > /root/mysql_secure_installation.sql << EOF
 -- Kill the anonymous users
 DELETE FROM mysql.user WHERE User='';
 -- allow remote login for root
@@ -36,12 +36,12 @@ GRANT ALL PRIVILEGES ON barbican.* TO 'barbican'@'%' IDENTIFIED BY 'foxconn';
 -- Make our changes take effect
 FLUSH PRIVILEGES;
 EOF
-sudo mysql -sfu root < mysql_secure_installation.sql
+sudo mysql -sfu root < /root/mysql_secure_installation.sql
 
 sudo dnf install openstack-keystone httpd python3-mod_wsgi -y
 sudo cp /etc/keystone/keystone.conf /etc/keystone/keystone_backup.conf
 
-sudo cat > keystone_conf_init.pl << EOF
+sudo cat > /root/keystone_conf_init.pl << EOF
 #!/usr/bin/perl
 while(<>)
 {
@@ -58,7 +58,7 @@ while(<>)
     else{print ; }
 }
 EOF
-sudo perl keystone_conf_init.pl /etc/keystone/keystone_backup.conf > /etc/keystone/keystone.conf
+sudo perl /root/keystone_conf_init.pl /etc/keystone/keystone_backup.conf > /etc/keystone/keystone.conf
 
 
 sudo su -s /bin/sh -c "keystone-manage db_sync" keystone 
@@ -127,7 +127,7 @@ openstack endpoint create --region RegionOne key-manager admin http://127.0.0.1:
 sudo dnf install openstack-barbican-api openstack-barbican-keystone-listener openstack-barbican-worker -y
 
 sudo cp /etc/barbican/barbican.conf /etc/barbican/barbican_backup.conf
-sudo cat > barbican_conf_init.pl << EOF
+sudo cat > /root/barbican_conf_init.pl << EOF
 #!/usr/bin/perl
 while(<>)
 {
@@ -169,7 +169,7 @@ password = admin_foxconn";}
     else{print ; }
 }
 EOF
-sudo perl barbican_conf_init.pl /etc/barbican/barbican_backup.conf > /etc/barbican/barbican.conf
+sudo perl /root/barbican_conf_init.pl /etc/barbican/barbican_backup.conf > /etc/barbican/barbican.conf
 
 sudo su -s /bin/sh -c "barbican-manage db upgrade" barbican
 
@@ -194,10 +194,33 @@ EOF
 sudo systemctl enable --now openstack-barbican-api
 sudo systemctl start --now openstack-barbican-api
 
-list="mysql_secure_installation.sql keystone_conf_init.pl barbican_conf_init.pl /root/startup.sh"
-sudo su -s /bin/sh -c "for i in $list; do if [ -f "mysql_secure_installation.sql" ] ;then rm $i ; fi ; done"
+sudo systemctl disable barbican_build_up.service
+sudo systemctl stop barbican_build_up
 
-' > startup.sh
-sudo chmod +x startup.sh
-sudo cp startup.sh /root/
-@reboot $HOME/startup.sh
+
+' > /root/startup.sh
+sudo chmod +x /root/startup.sh
+
+
+sudo echo -e '
+[Unit]
+Description=Building barbican server after reboot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/bin/bash /root/startup.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+' > /etc/systemd/system/barbican_build_up.service
+
+sudo chmod 644 /etc/systemd/system/barbican_build_up.service
+sudo systemctl daemon-reload
+# sudo systemctl start barbican_build_up.service
+# sudo systemctl status barbican_build_up
+sudo systemctl enable barbican_build_up.service
+
+sudo reboot 
