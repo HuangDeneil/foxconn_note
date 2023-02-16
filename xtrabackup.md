@@ -90,9 +90,7 @@ xtrabackup \
 --user=root \
 --password=foxconn
 
-
 /home/rocky/backup/mysql/test
-
 
 
 ## centos
@@ -178,71 +176,31 @@ xtrabackup \
 --datadir=/var/lib/mysql \
 --user=root \
 --password=foxconn
-
-
-
-
-
 ```
 
-
-
-
-
-## 備份所有資料庫
-```bash
-mkdir -p /home/centos/backup/mysql/innobackupex_20230131
-
-innobackupex \
---defaults-file=/etc/my.cnf.d/mysql-clients.cnf \
---user root \
---password foxconn \
---no-timestamp /home/centos/backup/mysql/innobackupex_20230131
-
-原文網址：https://kknews.cc/code/qgvxy2o.html
-
-
-```
 
 
 ## 全量備份
 ```bash
-mkdir -p /data/backup/
+##################
+### 
+### innobackupex
+### 
+
+--socket=/var/lib/mysql/mysql.sock \
+
+backup_path="/data/backup/mysql"
+backup_path="/share/data-NFS/backup/mysql/centos7/ori"
+mkdir $backup_path -p
 ## 全量備份-備份至指定資料夾，且創立備份時間資料夾
 innobackupex \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
 --user=root \
 --password=foxconn \
---socket=/var/lib/mysql/mysql.sock \
-/data/backup/
+$backup_path
 
-
-innobackupex \
---defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
---user=root \
---password=foxconn \
---datadir=/var/lib/mysql \
---socket=/var/lib/mysql/mysql.sock \
-/home/centos/backup/mysql/blank_20230202
-
-## backup
-xtrabackup \
---defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
---backup \
---target-dir=/home/centos/backup/mysql/blank_20230202 \
---datadir=/var/lib/mysql \
---user=root \
---password=foxconn
-
-## prepare
-xtrabackup \
---defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
---prepare \
---target-dir=/home/centos/backup/mysql/blank_20230202 \
---datadir=/var/lib/mysql \
---user=root \
---password=foxconn
-
+## 準備數據(prepare)
+innobackupex --apply-log $backup_path/2023-02-06_08-56-03
 
 ## 全量備份-備份至指定資料夾
 innobackupex \
@@ -250,37 +208,95 @@ innobackupex \
 --user=root \
 --password=foxconn \
 --socket=/var/lib/mysql/mysql.sock \
---no-timestamp /home/centos/backup/mysql/20230202
+--no-timestamp $backup_path/blank_20230206
 
 ## 準備數據(prepare)
-innobackupex \
---apply-log /data/backup/2023-02-01_17-19-24
+innobackupex --apply-log $backup_path/blank_20230206
+
+################
+### 
+### xtrabackup
+### 
+backup_path="/data/backup/mysql/ori"
+backup_path="/data/backup/mysql/test2"
+mkdir $backup_path -p
+## backup
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--target-dir=$backup_path \
+--user=root \
+--password=foxconn
+
+
+## prepare
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--prepare \
+--target-dir=$backup_path \
+--user=root \
+--password=foxconn
+
+
+
 ```
 
 ## 還原備份資料庫
 ```bash
-## 关闭mysql，并清除数据文件
-# service mariadb stop
+## 關閉 mariadb
 systemctl stop mariadb.service
 # systemctl start mariadb.service
-cd  mysqldata
-rm -rf *
+
+## 清除系統中mysql 儲存位置的一切資料
+rm -rf /var/lib/mysql/*
 
 ## 還原整個資料庫
+backup_path="/data/backup/mysql"
+##################
+### 
+### innobackupex
+### 
 innobackupex \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
---copy-back /data/backup/2023-02-01_17-19-24
+--copy-back $backup_path/2023-02-06_08-56-03
 
 innobackupex \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
---copy-back /home/centos/backup/mysql/blank_20230202
+--copy-back $backup_path/blank_20230206
 
+backup_path="/data/backup/mysql/ori"
+backup_path="/data/backup/mysql/innobackupex/full-20key"
+
+################
+### 
+### xtrabackup
+### 
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--target-dir=$backup_path \
+--copy-back 
 
 ## 改權限
-cd /var/lib/mysql
-chown -R mysql:mysql *
+chown -R mysql:mysql /var/lib/mysql
+
+## 開啟 mariadb
+systemctl start mariadb.service
+
+openstack secret list
+```
+
+```sql
+mysql -u root -pfoxconn
+show databases;
+use barbican
+show tables;
+select * from secrets;
+select * from kek_data;
+select * from encrypted_data;
 
 ```
+
+
 
 
 ## `/etc/my.cnf.d/mariadb-server.cnf`:
@@ -295,16 +311,634 @@ pid-file=/var/run/mariadb/mariadb.pid
 ```
 
 
+
+
+
+
 ## 增量備份
 ```bash
+backup_path="/data/backup/mysql"
+full_backup_path="$backup_path/innobackupex/full"
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+
+sock_path="/var/lib/mysql/mysql.sock"
+
+## 第一次須建立全量備份
 innobackupex \
---defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--defaults-file=$defaults_file \
+--user=root \
+--password=foxconn \
+--socket=$sock_path \
+--no-timestamp $full_backup_path
+
+
+## 第一次差量備份
+increase_backup_path="$backup_path/innobackupex/increase-1"
+innobackupex \
+--defaults-file=$defaults_file \
 --no-timestamp \
---incremental-basedir=/data/backup/2023-02-01_17-19-24 \
---user=root --password=password \
---incremental \
-/data/backup/2023-02-01_17-19-24_inc1
+--user=root \
+--password=foxconn \
+--incremental-basedir=$full_backup_path \
+--incremental $increase_backup_path
+
+
+## 建立第一把key
+openstack secret order create asymmetric --name 'secret-asy-2048' --bit-length 2048 --algorithm rsa
+
+## 第二次差量備份
+increase_backup_path="$backup_path/innobackupex/increase-2"
+innobackupex \
+--defaults-file=$defaults_file \
+--no-timestamp \
+--user=root \
+--password=foxconn \
+--incremental-basedir=$full_backup_path \
+--incremental $increase_backup_path
+
+## 建立第二把key
+openstack secret order create asymmetric --name 'secret-asy-2048-2' --bit-length 2048 --algorithm rsa
+
+## 第三次差量備份
+increase_backup_path="$backup_path/innobackupex/increase-3"
+innobackupex \
+--defaults-file=$defaults_file \
+--no-timestamp \
+--user=root \
+--password=foxconn \
+--incremental-basedir=$full_backup_path \
+--incremental $increase_backup_path
+
+
+
+## 產生20把key
+count=0
+for i in {1..20}
+do
+    count=$((count+=1))
+    keyname="key2-$count"
+    echo -e "Now is creating $keyname"
+
+openstack secret order create \
+asymmetric \
+--name $keyname \
+--bit-length 2048 \
+--algorithm rsa
+
+done 2>&1  | tee key.log
+
+
+
+## 第四次差量備份
+full_backup_path="$backup_path/innobackupex/full-ori"
+increase_backup_path="$backup_path/innobackupex/increase-4"
+innobackupex \
+--defaults-file=$defaults_file \
+--no-timestamp \
+--user=root \
+--password=foxconn \
+--incremental-basedir=$full_backup_path \
+--incremental $increase_backup_path
+
+
+
+backup_path="/data/backup/mysql"
+
+full_backup_path="$backup_path/innobackupex/full-ori"
+full_backup_path="$backup_path/test2"
+increase_backup_path="$backup_path/innobackupex/increase-3"
+
+## 產full backup redo log
+innobackupex --apply-log --redo-only $full_backup_path
+
+## 將差量備份合併到full backup
+innobackupex --apply-log --incremental-dir=$increase_backup_path $full_backup_path
+
+
+# 注：
+# --incremental: 增量备份存放路径
+# --incremental-basedir: 基于哪个目录增量
+
+## 差量備份
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--datadir=/var/lib/mysql \
+--user=root \
+--password=foxconn \
+--incremental-basedir=$backup_path/test \
+--target-dir=$backup_path/test-increase 
+
+
+
+
+
 
 
 ```
+
+
+
+
+
+
+## 還原差量備份
+```bash
+
+## 關閉 mariadb
+systemctl stop mariadb.service
+# systemctl start mariadb.service
+
+## 清除系統中mysql 儲存位置的一切資料
+rm -rf /var/lib/mysql/*
+
+backup_path="/data/backup/mysql"
+full_backup_path="$backup_path/innobackupex/full"
+full_backup_path="$backup_path/innobackupex/full-20key"
+
+## 產redo log
+innobackupex --apply-log --redo-only $full_backup_path
+
+increase_backup_path="$backup_path/innobackupex/increase-3"
+## 將差量備份合併到full backup
+innobackupex --apply-log \
+--incremental-dir=$increase_backup_path \
+$full_backup_path
+
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+##################
+### 
+### innobackupex
+### 
+innobackupex --defaults-file=$defaults_file --copy-back $full_backup_path
+
+## 改權限
+chown -R mysql:mysql /var/lib/mysql
+
+## 開啟 mariadb
+systemctl start mariadb.service
+
+openstack secret list
+```
+
+```sql
+mysql -u root -pfoxconn
+show databases;
+use barbican
+show tables;
+select * from secrets;
+select * from kek_data;
+select * from encrypted_data;
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```bash
+### 增量的恢复
+# 1）停止数据库
+ps -ef|grep mysql
+systemctl stop mariadb.service
+# service mariadb.service stop
+
+# systemctl start mariadb.service
+
+## 清除系統中mysql 儲存位置的一切資料
+rm -rf /var/lib/mysql/*
+
+
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+backup_path="/data/backup/mysql"
+full_backup_path="$backup_path/xtrabackup/full-ori"
+
+## 第一次全量備份
+if [ ! -d "$full_backup_path" ] ;then
+    mkdir -p $full_backup_path
+fi
+
+## 第一次全量備份 [backup]
+xtrabackup \
+--defaults-file=$defaults_file \
+--backup \
+--target-dir=$full_backup_path \
+--user=root \
+--password=foxconn
+
+
+
+
+## 先建立folder
+increase_backup_path="$backup_path/xtrabackup/increase-1"
+
+if [ ! -d "$increase_backup_path" ] ;then
+    mkdir -p $increase_backup_path
+fi
+
+## 第一次差量備份
+xtrabackup \
+--defaults-file=$defaults_file \
+--backup \
+--user=root \
+--password=foxconn \
+--incremental-basedir=$full_backup_path \
+--target-dir=$increase_backup_path 
+
+
+[root@deneil-barbican-test-seting xtrabackup]# du -sh *
+86M     full-ori
+11M     increase-1
+96M     zipfile
+
+
+#####################
+## 
+## merge redo log
+## 
+#####################
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+backup_path="/data/backup/mysql"
+full_backup_path="$backup_path/xtrabackup/full-ori"
+increase_backup_path="$backup_path/xtrabackup/increase-1"
+
+## prepare - full backup
+xtrabackup \
+--defaults-file=$defaults_file \
+--prepare \
+--apply-log-only \
+--target-dir=$full_backup_path \
+--user=root \
+--password=foxconn
+
+## prepare - increased backup merge log to root full backup
+xtrabackup \
+--defaults-file=$defaults_file \
+--prepare \
+--incremental-dir=$increase_backup_path \
+--target-dir=$full_backup_path \
+--user=root \
+--password=foxconn
+
+
+xtrabackup \
+--defaults-file=$defaults_file \
+--target-dir=$full_backup_path \
+--copy-back 
+
+
+## 改權限
+chown -R mysql:mysql /var/lib/mysql
+
+## 開啟 mariadb
+systemctl start mariadb.service
+
+
+openstack secret list
+```
+
+```sql
+mysql -u root -pfoxconn
+show databases;
+use barbican
+show tables;
+select * from secrets;
+select * from kek_data;
+select * from encrypted_data;
+
+```
+
+
+```bash
+
+
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+backup_path="/data/backup/mysql"
+full_backup_path="$backup_path/xtrabackup/full-ori"
+increase_backup_path="$backup_path/xtrabackup/specific_table"
+
+## 第一次全量備份
+if [ ! -d "$full_backup_path" ] ;then
+    mkdir -p $full_backup_path
+fi
+
+## 第一次全量備份 [backup]
+xtrabackup \
+--defaults-file=$defaults_file \
+--backup \
+--target-dir=$full_backup_path \
+--user=root \
+--password=foxconn
+
+
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--tables=instances,project \
+--target-dir=/home/amingo/20220621-ProjectNInstance/ \
+--datadir=/var/lib/mysql \
+--user=root \
+--password=foxconn
+
+
+
+  --tables=name       filtering by regexp for table names.
+  --databases=name    filtering by list of databases.
+  --databases-exclude=name 
+                      Excluding databases based on name, Operates the same way
+                      as --databases, but matched names are excluded from
+                      backup. Note that this option has a higher priority than
+                      --databases.
+
+
+  --copy-back         Copy all the files in a previously made backup from the
+                      backup directory to their original locations.
+  -u, --user=name     This option specifies the MySQL username used when
+                      connecting to the server, if that's not the current user.
+                      The option accepts a string argument. See mysql --help
+                      for details.
+  -H, --host=name     This option specifies the host to use when connecting to
+                      the database server with TCP/IP.  The option accepts a
+                      string argument. See mysql --help for details.
+  -P, --port=#        This option specifies the port to use when connecting to
+                      the database server with TCP/IP.  The option accepts a
+                      string argument. See mysql --help for details.
+  -p, --password[=name] 
+                      This option specifies the password to use when connecting
+                      to the database. It accepts a string argument.  See mysql
+                      --help for details.
+
+
+  --open-files-limit=# 
+                      the maximum number of file descriptors to reserve with
+                      setrlimit().
+  --redo-log-version=# 
+                      Redo log version of the backup. For --prepare only.
+
+
+
+
+
+```
+
+```bash
+backup_path="/share/data-NFS/backup/mysql/"
+
+backup_path="/data/backup/mysql"
+
+full_backup_path="$backup_path/ori"
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+
+sock_path="/var/lib/mysql/mysql.sock"
+
+## 第一次須建立全量備份
+innobackupex \
+--defaults-file=$defaults_file \
+--user=root \
+--password=foxconn \
+--no-timestamp $full_backup_path
+
+## 產生20把key
+count=0
+for i in {1..20}
+do
+    count=$((count+=1))
+    keyname="key2-$count"
+    echo -e "Now is creating $keyname"
+
+openstack secret order create \
+asymmetric \
+--name $keyname \
+--bit-length 2048 \
+--algorithm rsa
+
+done 2>&1  | tee key.log
+
+## 第四次差量備份
+full_backup_path="$backup_path/centos7/ori"
+increase_backup_path="$backup_path/centos7/increase-1"
+innobackupex \
+--defaults-file=$defaults_file \
+--no-timestamp \
+--user=root \
+--password=foxconn \
+--incremental-basedir=$full_backup_path \
+--incremental $increase_backup_path
+
+
+```
+
+
+
+
+```bash
+
+backup_path="/share/data-NFS/backup/mysql"
+backup_path="/data/backup/mysql"
+increase_backup_path="$backup_path/centos7/parial"
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+
+innobackupex \
+--defaults-file=$defaults_file \
+--user=root \
+--password=foxconn \
+--no-timestamp $full_backup_path
+
+
+## https://blog.51cto.com/lookingdream/1905261
+## 创建部分备份（Creating Partial Backups）
+# 方式一：使用--include参数
+test_parial_backup_path="$backup_path/centos7/parial2"
+--include='barbican.containers' \
+innobackupex --user=root --password=foxconn --no-timestamp $test_parial_backup_path
+
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+
+# 方式二：使用--tables-file参数
+
+
+echo "mydatabase.mytable" > /tmp/tables.txt  
+
+echo -e "keystone.*
+barbican.containers
+barbican.container_secret
+barbican.container_consumer_metadata
+barbican.encrypted_data
+barbican.kek_data
+barbican.orders
+barbican.projects
+barbican.secret_store_metadata
+barbican.secrets
+barbican.secret_user_metadata" > test.txt
+
+tables_file="/share/data-NFS/backup/mysql/centos7/table.txt"
+tables_file="/data/backup/table.txt"
+
+backup_path="/data/backup/mysql"
+increase_backup_path="$backup_path/parial"
+defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
+
+--tables-file=$tables_file \
+innobackupex \
+--defaults-file=$defaults_file \
+--user=root \
+--password=foxconn \
+--no-timestamp \
+$increase_backup_path
+
+innobackupex --databases="mydatabase.mytable mysql" $increase_backup_path
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--databases=keystone,nova \
+--tables=instances,project \
+--target-dir=/home/amingo/20220621-DBnTables/ \
+--datadir=/var/lib/mysql \
+--user=root --password=foxconn
+
+
+backup_path="/share/data-NFS/backup/mysql/"
+increase_backup_path="$backup_path/centos7/parial"
+
+# 方式三：使用--databases参数
+innobackupex \
+--defaults-file=$defaults_file \
+--databases="mydatabase.mytable mysql" \
+--user=root \
+--password=foxconn \
+$increase_backup_path
+
+
+```
+
+
+```bash
+use barbican
+MariaDB [barbican]> show tables from barbican;
++-----------------------------------+
+| Tables_in_barbican                |
++-----------------------------------+
+| alembic_version                   |
+| certificate_authorities           |
+| certificate_authority_metadata    |
+| container_acl_users               |
+| container_acls                    |
+| container_consumer_metadata       |
+| container_secret                  |
+| containers                        |
+| encrypted_data                    |
+| kek_data                          |
+| order_barbican_metadata           |
+| order_plugin_metadata             |
+| order_retry_tasks                 |
+| orders                            |
+| preferred_certificate_authorities |
+| project_certificate_authorities   |
+| project_quotas                    |
+| project_secret_store              |
+| projects                          |
+| secret_acl_users                  |
+| secret_acls                       |
+| secret_store_metadata             |
+| secret_stores                     |
+| secret_user_metadata              |
+| secrets                           |
+| transport_keys                    |
++-----------------------------------+
+
+select * from barbican.containers;
+select * from barbican.container_secret;
+select * from barbican.container_consumer_metadata;
+select * from barbican.encrypted_data;
+select * from barbican.kek_data;
+select * from barbican.orders;
+select * from barbican.projects;
+select * from barbican.secret_store_metadata;
+select * from barbican.secrets;
+select * from secret_user_metadata;
+
+
+barbican.containers
+barbican.container_secret
+barbican.container_consumer_metadata
+barbican.encrypted_data
+barbican.kek_data
+barbican.orders
+barbican.projects
+barbican.secret_store_metadata
+barbican.secrets
+barbican.secret_user_metadata
+
+```
+
+
+
+
+```bash
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+
+curl \
+-X PUT http://127.0.0.1:9311/v1/secrets/ce0e5ad2-ba80-40c0-a311-653a5ec5a0aa/metadata \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '{
+  "metadata": {
+      "description": "contains the rsa key",
+      "geolocation": "test",
+      "testing": "test"
+    }
+}'
+
+curl \
+-X GET http://127.0.0.1:9311/v1/secrets/ce0e5ad2-ba80-40c0-a311-653a5ec5a0aa/metadata \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token"
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+curl \
+-X POST http://127.0.0.1:9311/v1/secrets/ \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '{"name": "test-api-upload-3", 
+"algorithm": "rsa", 
+"mode": "", 
+"bit_length": 2048, 
+"secret_type": "private", 
+"payload": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCoJ9aTaEQAfSZN\nJzf9zbV65Zu/mxrrwqPkUV1iy1vtfA9FbK9zOQuDjBjVT245LGjisSlZcWMjc1de\nF5sw7sL/mwIXg9aN4Ix1OPF0cVYVWNP2p7iIe7VxAwSeeq4Xo35LSIX34GADvjQo\nmqkkeg0DVALtaUO2J26O2WULRBBzBrMi9wZDk+dtEy+DWh8mhCf/CUlTdlxNTX50\n99u1O+2eWpxPpRPr7KPMNZRU4QYPDj3Ccx0F0iYPK4lUbY9KZhfkFV1JSj+0yY48\nByxJUYZ5GswcaDlyaXVPh2M7fDqOjs6GdBPR+qp8UVMSowxTDxX0n34ngWdoEi0r\nj6YJV1B3AgMBAAECggEAOBAgMEFA+tC+5lY/CrV83h6TUMyLqzLXpZWjBv86BPGp\nvcHAtS+9sPwSg3vaCeHOjlX2rUVqgjVAWbSRHz1bchDiH6jq7Z6B9csoZWQsCS32\nbXP5yDdGhQk2jwfj5ymxP7RMRhpeqKDPjwIRhoHSuNtXpoPD+YUoDSRZ1em5ej+k\ne9xrtqrWJOuFc/rwcL+2FMq4vtXjd0cA9Ox2WIAHr6jiMUx61DHRpdmSYLy7qU/k\nwg/VUipzw/OzXFoOMbFqCa4wncAwIsLZueW3awfTY3e8L6pYYAK8WbuI5+Qvebci\nVaCmflS92ZlwVgclF227y6kivfhCZia4fM91gtMeUQKBgQDmRyN5hMg1OAnkUO6e\npoV8ST+RlPGSyQFwFcacvgPcHgJeyeEB3CWcT4u0J4x82XAKe8dXNpXG97eG1gjA\noIv+ty01nDfUjJiX6/iv2FkiEnYh/VehbC62pGk/vfuruER5remh0CbC6+3Z263F\njM49EmsVmLNoD2Wt6zrWyPVpewKBgQC68Eu3czIuKvzYwix2r3eemv7GOw4TGsZq\n+liBArhP7dyKuv8kcr+sXKP30Rw/F4kuNxTZ6iOUp0++ifPtMu/GzCDDsLfOc+nc\nvTYwUuROPfmEhOtt73aoTu+GH9RoJrQa6WyRRyxoLlT4M50EPivQXHztYjluXV7h\nlFxf359ONQKBgQCi3EEcmmo2KVHlpc99aOwTQIKy5ZIMbBiWOvBivohgTuECROjb\nteTrrd5yJV5YljeFUpFi/vni5CNqO0mpYmJgXRCeT8O0kVMCbyNMykgPrtrZoyEs\nyyQmjBTbvfOWORZEsFkB1gLz7IQlhhZaFwFtc+9EMOEBgZI59JmCelIGrQKBgQCM\njjigCqFkTTYn1HeSFYSfYHLHoYeHnc4qiWkaN21Vy8bTGJ7WTOEJO+6dWkEevxeK\nBChNYNq33sT6wscBRhc7JihMewb41/ay3iFsXCcFHVwK49YQpshU7GT0N+KBHPi2\nc2QKJ7Wf75Y7uLMKiaRv2dqksgH0lYfNnLuH6p/hMQKBgF9yurywod2Hb9uTGzGS\nHLFZI44QnKpJr/kSPhyh90o/52KTlhnN3C8mJ81tLJhAOH1L7beeG2hiYyy+gQCU\n/Rejy2CpQkkyyc9AEzFcxHzluH03uwDzyLhDYZ7JweY7V8NVR073QM+wbc9oo3HU\nGUUTiasF3KtqIF3rpqAM/l0f\n-----END PRIVATE KEY-----\n", 
+"payload_content_type": "text/plain" 
+}'
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

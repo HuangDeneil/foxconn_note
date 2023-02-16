@@ -1,11 +1,37 @@
 
-sudo yum update -y 
-sudo yum install nano vim -y
+## package installation
+share="/share/data/rpm"
+
+if [ ! -d $share ] ;then
+    echo "please check share file path exists !!"
+    exit 1
+fi
+
+sudo cp $share /root/
+
+sudo yum localinstall -y /root/required/update/* 
+sudo yum localinstall -y /root/required/vim/* 
+sudo yum localinstall -y /root/required/nano/* 
+sudo yum localinstall -y /root/required/tree/* 
+sudo yum localinstall -y /root/required/httpd/* 
+sudo yum localinstall -y /root/required/mod_wsgi/*
+sudo yum localinstall -y /root/required/mariadb-server/* 
+sudo yum localinstall -y /root/required/rabbitmq-server/* 
+sudo yum localinstall -y /root/required/memcached/* 
+
+sudo yum localinstall -y /root/openstack/00_openstack_queen/*
+sudo yum localinstall -y /root/openstack/01_python-openstackclient/*
+sudo yum localinstall -y /root/openstack/02_python2-qpid-proton-0.22.0-1.el7.x86_64/*
+sudo yum localinstall -y /root/openstack/03_openstack-keystone/*
+sudo yum localinstall -y /root/openstack/04_openstack-barbican-api/*
+sudo yum localinstall -y /root/openstack/05_python2-barbicanclient/*
+
+## Setting region
+# time zone
 sudo timedatectl set-timezone Asia/Taipei 
 sudo sed -i 's#SELINUX=permissive#SELINUX=disabled#g' /etc/selinux/config 
-sudo yum install https://repos.fedorapeople.org/repos/openstack/openstack-queens/rdo-release-queens-2.noarch.rpm -y
-sudo yum install python-openstackclient -y
-sudo yum install mariadb-server -y 
+
+# start mariadb
 sudo systemctl start mariadb.service 
 sudo systemctl enable mariadb.service
 
@@ -37,8 +63,7 @@ FLUSH PRIVILEGES;
 " > /root/mysql_secure_installation.sql
 sudo mysql -sfu root < /root/mysql_secure_installation.sql
 
-sudo yum install python2-qpid-proton-0.22.0-1.el7.x86_64 -y
-sudo yum install openstack-keystone -y
+# keystone settings
 sudo mv /etc/keystone/keystone.conf /etc/keystone/keystone_backup.conf
 sudo echo -e '
 #!/usr/bin/perl
@@ -63,6 +88,7 @@ sudo su -s /bin/sh -c "keystone-manage db_sync" keystone
 sudo keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone; keystone-manage credential_setup --keystone-user keystone --keystone-group keystone; keystone-manage bootstrap --bootstrap-password admin_foxconn --bootstrap-admin-url http://127.0.0.1:5000/v3/ --bootstrap-internal-url http://127.0.0.1:5000/v3/ --bootstrap-public-url http://127.0.0.1:5000/v3/ --bootstrap-region-id RegionOne
 sudo ln -s /usr/share/keystone/wsgi-keystone.conf /etc/httpd/conf.d/
 
+# start httpd
 sudo systemctl start httpd 
 sudo systemctl enable httpd
 
@@ -76,7 +102,8 @@ export OS_AUTH_URL=http://127.0.0.1:5000/v3
 export OS_IDENTITY_API_VERSION=3
 " > admin-openrc.sh
 
-sudo yum install rabbitmq-server -y 
+
+# start rabbitmq & settings
 sudo systemctl enable rabbitmq-server.service
 sudo systemctl start rabbitmq-server.service
 sudo chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
@@ -85,12 +112,14 @@ sudo rabbitmqctl add_user openstack foxconn
 sudo rabbitmqctl set_permissions -p / openstack ".*" ".*" ".*" 
 sudo rabbitmqctl set_policy -p / ha-all '^(?!amq\.).*' '{"ha-mode": "all"}'
 
-sudo yum install memcached -y ; 
-sudo systemctl enable memcached.service ; 
+
+# start memcached
+sudo systemctl enable memcached.service 
 sudo systemctl start memcached.service
 
 
-### Must need to reboot 
+### Must need to reboot to open tcp port
+# barbican settings 
 echo -e '
 #!/bin/bash
 
@@ -112,7 +141,6 @@ openstack endpoint create --region RegionOne key-manager public http://127.0.0.1
 openstack endpoint create --region RegionOne key-manager internal http://127.0.0.1:9311
 openstack endpoint create --region RegionOne key-manager admin http://127.0.0.1:9311
 
-sudo yum install openstack-barbican-api python2-barbicanclient -y
 
 sudo cp /etc/barbican/barbican.conf /etc/barbican/barbican_backup.conf
 sudo cat > barbican_conf_init.pl << EOF
@@ -170,6 +198,7 @@ sudo su -s /bin/sh -c "barbican-manage db upgrade" barbican
 sudo systemctl enable --now openstack-barbican-api
 sudo systemctl start --now openstack-barbican-api
 
+## barbican building done stop barbican_build_up.service & disable onboot
 sudo systemctl disable barbican_build_up.service
 sudo systemctl stop barbican_build_up
 '  > /root/startup.sh
@@ -191,10 +220,9 @@ Restart=always
 WantedBy=multi-user.target
 ' > /etc/systemd/system/barbican_build_up.service
 
+## Setting barbican building code onboot
 sudo chmod 644 /etc/systemd/system/barbican_build_up.service
 sudo systemctl daemon-reload
-# sudo systemctl start barbican_build_up.service
-# sudo systemctl status barbican_build_up
 sudo systemctl enable barbican_build_up.service
 
 sudo reboot 
