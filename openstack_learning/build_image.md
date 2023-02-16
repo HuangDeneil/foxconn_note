@@ -524,7 +524,7 @@ openstack image save --file barbicanVM-test-volume-to-image.qcow2 $image_id
 
 ```
 
-
+```bash
 
 openstack server create \
 --flavor FiCo-v2m4-Q10 \
@@ -538,6 +538,22 @@ deneil_test_key_rotation
 
 
 
+
+
+openstack server create \
+--flavor FiCo-v2m4-Q10 \
+--availability-zone Availability-Zone-1:dct-queens-com-003 \
+--image ef734296-e550-4198-9c66-84ad2be5fce4 \
+--nic port-id=3273a948-293b-4608-b3ad-fa54356bd2fb \
+--security-group e3cdc39a-53f0-427a-8098-48785d2e7b4e \
+--key-name "openstack control node" \
+--user-data password-cloud-init \
+deneil_test_barbican-centos7
+
+
+
+
+
 nova boot \
   --flavor FiCo-v1m2-Q1 \
   --availability-zone minsky-az:dct-queens-com-007 \
@@ -547,5 +563,5 @@ nova boot \
   --poll khq-st-minsky-vm-test6
 
 
-
+```
 

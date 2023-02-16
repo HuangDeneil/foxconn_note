@@ -46,8 +46,36 @@ route del -net 192.168.77.0 netmask 255.255.255.0 gw 172.19.0.124 dev eth0
 
 
 ## 192.168.77.18
-ded41dd2-961d-4c33-bcbc-809e73fe847a
+```bash
 
+openstack port create --fixed-ip subnet=<subnet>,ip-address=<ip-address>
+openstack port create --fixed-ip subnet=ad29c0a8-aa14-47e7-83ec-dd36b992987b,ip-address=192.168.77.20
+
+openstack port create \
+--network 764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
+--fixed-ip subnet=ad29c0a8-aa14-47e7-83ec-dd36b992987b,ip-address=192.168.77.20 \
+testing-port
+
+
+[root@dct-queens-ctl-001 ~]# openstack port list | grep 192.168.77.20
+| 5d563fe5-5094-4848-b649-2471225e9fe0 | testing-port
+                                   | fa:16:3e:22:27:02 | ip_address='192.168.77.20', subnet_id='ad29c0a8-aa14-47e7-83ec-dd36b992987b'   | DOWN   |
+```
+
+```bash
+
+[root@dct-queens-ctl-001 ~]# openstack server list | grep deneil
+| ffbb718c-e88e-4b28-931b-d7e293d60172 | deneil_test_key_rotation    | ACTIVE | API_net=192.168.60.164     | FICO-Centos-7.9     | FiCo-v2m4-Q10|
+| eb246e45-d37e-414c-944b-e63e4f8fb7d1 | deneil-test-us-net          | ACTIVE | us_network=172.19.0.160    |                     | FiCo-v2m4-Q10|
+| 6f1d9df2-5a5f-47e1-ba19-761dbf137146 | deneil-test-network         | ACTIVE | API_net=192.168.60.186     |                     | FiCo-v2m4-Q10|
+
+```
+
+
+
+openstack server add port <server> <port>
+## 
+openstack server add port ffbb718c-e88e-4b28-931b-d7e293d60172 5d563fe5-5094-4848-b649-2471225e9fe0
 
 
 ## 因為已有public network (FHW)
