@@ -93,6 +93,8 @@ find . | grep avahi-libs-0.8-12.el9.x86_64.rpm
 ### 將把所有rpm file放到同個資料夾下進行安裝
 ```bash
 rpm -ivh *
+
+yum localinstall *
 ```
 
 

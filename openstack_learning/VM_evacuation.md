@@ -87,3 +87,133 @@ p5=subprocess.Popen('nova {auth} list --all --host {node}'.format(node=evac_node
 p6=subprocess.Popen("awk 'NR>3{print $2}'",shell=True,stdin=p5.stdout,stdout=subprocess.PIPE)
 
 ```
+
+
+## CPU info 
+
+```python
+
+def getCpuinfoToJson(self, token, req_compute, compute_url):
+    for key, host_name in req_compute.items():
+        resultPath = os.path.join("result","{}.json".format(host_name))
+        file = Path(resultPath)
+        if file.is_file():
+            print("----- {} CPU infor json file for this compute node already exists -----".format(host_name))
+        else:
+            print("----- {} CPU infor of this compute node is not exist, get and save the node infor -----".format(host_name))
+            # Get list of hypervisors detail
+            headers = {'Content-Type': 'application/json',
+                    'X-Auth-Token': token}
+            url = '{}/v2.1/os-hypervisors/detail'.format(compute_url)
+            res = requests.get(url, headers=headers)
+            node_detail = json.loads(res.content)
+
+            self._getCpuinfo(node_detail["hypervisors"], host_name)
+    return req_compute
+
+"compute_url": "http://192.168.60.200:8774/v2.1/os-hypervisors/detail"
+
+```
+
+
+
+
+```bash
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+
+REQ=`curl -X GET http://192.168.9.200:8774/v2.1/os-hypervisors/detail -H "Accept: application/json" -H "X-Auth-Token: $token"`
+
+ echo  $REQ |  python -m json.tool | grep "created" | wc -l
+
+
+```
+
+
+
+
+
+```bash
+
+[root@tj-testbed-control-001 ~]# openstack aggregate create test-Spare-zone
++-------------------+----------------------------+
+| Field             | Value                      |
++-------------------+----------------------------+
+| availability_zone | None                       |
+| created_at        | 2023-02-23T02:02:40.312976 |
+| deleted           | False                      |
+| deleted_at        | None                       |
+| id                | 12                         |
+| name              | test-Spare-zone            |
+| updated_at        | None                       |
++-------------------+----------------------------+
+
+
+
+openstack aggregate list
+[root@tj-testbed-control-001 ~]# openstack aggregate list
++----+-----------------+-------------------+
+| ID | Name            | Availability Zone |
++----+-----------------+-------------------+
+|  2 | FiXo-Zone-01    | FiXo-Zone-01      |
+|  9 | FiXo-Zone-Groot | FiXo-Zone-Groot   |
+| 12 | test-Spare-zone | test-Spare-zone   |
++----+-----------------+-------------------+
+
+openstack aggregate create test-Spare-zone
+
+openstack aggregate set --zone test-Spare-zone test-Spare-zone
+
+
+## 從 FiXo-Zone-01 移除 tj-testbed-compute-005
+nova aggregate-remove-host 2 tj-testbed-compute-005
+
+## 將 tj-testbed-compute-005 加進去到 test-Spare-zone
+nova aggregate-add-host 12 tj-testbed-compute-005
+
+## 顯示指定節點上的VM們
+nova list --all --host tj-testbed-compute-005
+nova list --all --host tj-testbed-compute-006
+
+
+
+
+[root@tj-testbed-control-001 ~]# nova aggregate-remove-host 2 tj-testbed-compute-005
+
+nova aggregate-add-host 12 tj-testbed-compute-005
+Host tj-testbed-compute-005 has been successfully removed from aggregate 2 
++----+--------------+-------------------+--------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------+
+| Id | Name         | Availability Zone | Hosts                          | Metadata                       | UUID                                 |
++----+--------------+-------------------+--------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------+
+| 2  | FiXo-Zone-01 | FiXo-Zone-01      | 'tj-testbed-compute-001', 'tj-testbed-compute-002', 'tj-testbed-compute-004', 'tj-testbed-compute-003' | 'ais=true', 'apigw=true', 'availability_zone=FiXo-Zone-01', 'bcs=true', 'bds=true', 'cis=true', 'cis-hbr=true', 'cis-hub=true', 'cis-psd=true', 'dbs=true', 'fico=true', 'fiwo=true', 'mqs=true', 'octavia=true', 'psd=true', 'sfs=true' | 9dcd8879-457b-463a-9eb0-af3c1c6548f7 |
++----+--------------+-------------------+--------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
