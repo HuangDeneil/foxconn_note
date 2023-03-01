@@ -168,12 +168,175 @@ openstack aggregate set --zone test-Spare-zone test-Spare-zone
 ## 從 FiXo-Zone-01 移除 tj-testbed-compute-005
 nova aggregate-remove-host 2 tj-testbed-compute-005
 
+
 ## 將 tj-testbed-compute-005 加進去到 test-Spare-zone
 nova aggregate-add-host 12 tj-testbed-compute-005
+nova aggregate-add-host test-Spare-zone tj-testbed-compute-005
+
+
+
+# FiXo-Zone-Groot to test-Spare-zone
+nova aggregate-remove-host FiXo-Zone-Groot tj-testbed-compute-005
+nova aggregate-add-host test-Spare-zone tj-testbed-compute-005
+
+# test-Spare-zone to FiXo-Zone-Groot 
+nova aggregate-remove-host test-Spare-zone tj-testbed-compute-005
+nova aggregate-add-host FiXo-Zone-Groot tj-testbed-compute-005
+
+
+
+
+
+
+
 
 ## 顯示指定節點上的VM們
 nova list --all --host tj-testbed-compute-005
 nova list --all --host tj-testbed-compute-006
+
+[root@tj-testbed-control-001 python_peripheral_tool]# nova list --all --host tj-testbed-compute-006  
++--------------------------------------+------------------+----------------------------------+--------+------------+-------------+---------------------------------------+
+| ID                                   | Name             | Tenant ID                        | Status | Task State | Power State | Networks                              |
++--------------------------------------+------------------+----------------------------------+--------+------------+-------------+---------------------------------------+
+| 5f125d20-b48d-4772-8f69-015b4279d81c | deneil-test-VM   | 71e93aa11b6b40b9abf39a5a619f1f9d | ACTIVE | -          | Running     | API_net=192.168.9.228                 |
+| 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e | ll-instance11902 | 71e93aa11b6b40b9abf39a5a619f1f9d | ACTIVE | -          | Running     | admin-private-rdtestnet=192.168.109.9 |
++--------------------------------------+------------------+----------------------------------+--------+------------+-------------+---------------------------------------+
+
+
+
+
+openstack server migrate d1df1b5a-70c4-4fed-98b7-423362f2c47c --live HostC
+
+
+
+nova evacuate --force 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003
+
+
+## 測試遷移deneil-test-VM 至 tj-testbed-compute-003 
+nova evacuate --force 5f125d20-b48d-4772-8f69-015b4279d81c tj-testbed-compute-003 
+nova evacuate 5f125d20-b48d-4772-8f69-015b4279d81c tj-testbed-compute-005
+
+
+
+
+
+
+
+
+nova live-migration --force bf235a95-6fa0-4588-a3c2-d093de16b92f tj-testbed-compute-006
+
+
+
+# deneil-test-VM-100 至 tj-testbed-compute-003 
+
+nova evacuate --force {vm} {evac_node}
+nova evacuate --force 7cf80f56-781b-48a9-b3f7-a89136d3fb8b tj-testbed-compute-003 
+
+nova live-migration --force 7cf80f56-781b-48a9-b3f7-a89136d3fb8b tj-testbed-compute-003 
+
+###
+## nova host-evacuate-live --force 
+
+
+nova server-migration-list 7cf80f56-781b-48a9-b3f7-a89136d3fb8b
+
+
+nova live-migration 7cf80f56-781b-48a9-b3f7-a89136d3fb8b tj-testbed-compute-003
+
+## deneil-test-VM-400 from tj-testbed-compute-003 to tj-testbed-compute-006 
+nova live-migration edce5997-90c8-4c04-ad49-ce43c5c83a6a tj-testbed-compute-006
+
+
+
+nova migrate --host tj-testbed-compute-003 7cf80f56-781b-48a9-b3f7-a89136d3fb8b 
+
+
+nova live-migration --force 5f125d20-b48d-4772-8f69-015b4279d81c tj-testbed-compute-003
+
+
+nova reset or reboot
+
+nova reboot 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e
+
+
+## 遷移ll的到tj-testbed-compute-003 
+openstack server migrate 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e --live tj-testbed-compute-003 
+nova live-migration --force 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003 
+nova live-migration 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003 
+
+
+
+
+# nova migrate [--host <host>] [--poll] <server>
+nova migrate --host tj-testbed-compute-003 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e
+
+
+nova server-migration-list 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e
+
+nova server-migration-show 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e
+
+nova live-migration --force 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003
+nova live-migration-force-complete 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003 
+
+
+nova host-evacuate-live --force 
+
+nova server-migration-list 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e
+
+## 遷移ll的到tj-testbed-compute-003 
+openstack server migrate 5f125d20-b48d-4772-8f69-015b4279d81c --live tj-testbed-compute-005
+
+nova live-migration --force 5f125d20-b48d-4772-8f69-015b4279d81c tj-testbed-compute-005
+
+
+[root@tj-testbed-control-001 python_peripheral_tool]# nova evacuate --force 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003
+ERROR (BadRequest): Compute service of tj-testbed-compute-006 is still in use. (HTTP 400) (Request-ID: req-6f70f74b-70bf-4e1d-8bc3-28fc38abf1dc)
+
+
+```
+
+
+
+
+
+```bash
+
+[root@tj-testbed-control-001 python_peripheral_tool]# nova hypervisor-list
++--------------------------------------+------------------------+-------+---------+
+| ID                                   | Hypervisor hostname    | State | Status  |
++--------------------------------------+------------------------+-------+---------+
+| f4ff18c1-34d4-4627-9920-ae1b8913fef0 | tj-testbed-compute-002 | up    | enabled |
+| fe1f7f19-4d02-4288-9853-f6ece0ec9d7f | tj-testbed-compute-004 | up    | enabled |
+| ddb05077-49ab-4ba4-b865-f629cb38235c | tj-testbed-compute-003 | up    | enabled |
+| 1522b88d-c75d-494f-9662-a66eda625c1a | tj-testbed-compute-001 | up    | enabled |
+| a4a81702-6ea9-4ff9-8523-0c892380df1c | tj-testbed-compute-005 | up    | enabled |
+| 946831e5-5407-44ef-8c0e-653751a111d0 | tj-testbed-compute-006 | up    | enabled |
++--------------------------------------+------------------------+-------+---------+
+
+
+
+
+
+[root@tj-testbed-control-001 ~]# nova aggregate-remove-host FiXo-Zone-Groot tj-testbed-compute-005
+Host tj-testbed-compute-005 has been successfully removed from aggregate 9 
++----+-----------------+-------------------+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------+
+| Id | Name            | Availability Zone | Hosts                    | Metadata
+                                                                                  | UUID                                 |
++----+-----------------+-------------------+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------+
+| 9  | FiXo-Zone-Groot | FiXo-Zone-Groot   | 'tj-testbed-compute-006' | 'ais=true', 'apigw=true', 'availability_zone=FiXo-Zone-Groot', 'cis=true', 'cis-hub=true', 'cis-psd=true', 'dbs=true', 'fico=true', 'fiwo=true', 'mqs=true', 'sfs=true' | 701de874-ca12-4eae-b942-270b9cfd1b02 |
++----+-----------------+-------------------+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------+
+
+
+[root@tj-testbed-control-001 ~]# nova aggregate-add-host test-Spare-zone tj-testbed-compute-005
+Host tj-testbed-compute-005 has been successfully added for aggregate 12
++----+-----------------+-------------------+--------------------------+-------------------------------------+--------------------------------------+
+| Id | Name            | Availability Zone | Hosts                    | Metadata                            | UUID                                 |
++----+-----------------+-------------------+--------------------------+-------------------------------------+--------------------------------------+
+| 12 | test-Spare-zone | test-Spare-zone   | 'tj-testbed-compute-005' | 'availability_zone=test-Spare-zone' | 7a9f008d-71da-48c2-b856-cf85c130f18f |
++----+-----------------+-------------------+--------------------------+-------------------------------------+--------------------------------------+
+
+
+
 
 
 
@@ -192,7 +355,43 @@ Host tj-testbed-compute-005 has been successfully removed from aggregate 2
 
 
 
+```bash
+[root@tj-testbed-control-001 ~]# openstack aggregate list
++----+-----------------+-------------------+
+| ID | Name            | Availability Zone |
++----+-----------------+-------------------+
+|  2 | FiXo-Zone-01    | FiXo-Zone-01      |
+|  9 | FiXo-Zone-Groot | FiXo-Zone-Groot   |
+| 12 | test-Spare-zone | test-Spare-zone   |
++----+-----------------+-------------------+
+[root@tj-testbed-control-001 ~]# openstack network list
++--------------------------------------+--------------------+--------------------------------------+
+| ID                                   | Name               | Subnets                              |
++--------------------------------------+--------------------+--------------------------------------+
+| 5aa967fa-b4ed-456e-8717-acf5628634e2 | FHW                | 9277b92d-68a7-4f26-a285-b51def7e543e |
+| c94ceb9a-c58e-4897-87ef-dac98e4993ca | private-deneil-FHW | 1aeadf23-2c5a-4f81-a0c2-4e68c8dc4f10 |
++--------------------------------------+--------------------+--------------------------------------+
+FiCo-v2m4-Q1
 
+
+## 開 VM 到指定 compute-node
+nova boot \
+--flavor FiCo-v2m4-Q1 \
+--availability-zone FiXo-Zone-Groot:tj-testbed-compute-006 \
+--security-groups eef4e3fd-f781-4817-b6ed-7f2e546bda60 \
+--key-name deneil_keypair \
+--user-data /home/deneil/password-cloud-init \
+--nic net-id=e23d8db4-d7dd-469b-bdf0-1d84aa62adc4 \
+--boot-volume 6e462e91-9304-49b0-a3c0-00af7aeec4c4 \
+Groot-VM-test-2
+--poll \
+
+
+cinder create
+--volume-type
+
+
+```
 
 
 
