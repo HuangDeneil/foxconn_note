@@ -53,15 +53,17 @@ yum localinstall -y rpm/required/update/*
 yum localinstall -y rpm/required/vim/* 
 yum localinstall -y rpm/required/nano/* 
 yum localinstall -y rpm/required/tree/* 
+yum localinstall -y rpm/required/httpd/* 
+yum localinstall -y rpm/required/mod_wsgi/* 
 yum localinstall -y rpm/required/mariadb-server/* 
 yum localinstall -y rpm/required/rabbitmq-server/* 
 yum localinstall -y rpm/required/memcached/* 
 
 
-yum localinstall -y 00_openstack_queen/*
-yum localinstall -y 01_python-openstackclient/*
-yum localinstall -y 02_python2-qpid-proton-0.22.0-1.el7.x86_64/*
-yum localinstall -y 03_openstack-keystone/*
-yum localinstall -y 04_openstack-barbican-api/*
-yum localinstall -y 05_python2-barbicanclient/*
+yum localinstall -y rpm/openstack/00_openstack_queen/*
+yum localinstall -y rpm/openstack/01_python-openstackclient/*
+yum localinstall -y rpm/openstack/02_python2-qpid-proton-0.22.0-1.el7.x86_64/*
+yum localinstall -y rpm/openstack/03_openstack-keystone/*
+yum localinstall -y rpm/openstack/04_openstack-barbican-api/*
+yum localinstall -y rpm/openstack/05_python2-barbicanclient/*
 

@@ -809,16 +809,16 @@ xtrabackup \
 --user=root --password=foxconn
 
 
-backup_path="/share/data-NFS/backup/mysql/"
-increase_backup_path="$backup_path/centos7/parial"
+backup_path="backup/mysql/"
+parial_backup_path="$backup_path/parial"
 
 # 方式三：使用--databases参数
 innobackupex \
---defaults-file=$defaults_file \
---databases="mydatabase.mytable mysql" \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--databases="barbican.containers keystone" \
 --user=root \
 --password=foxconn \
-$increase_backup_path
+$parial_backup_path
 
 
 ```
@@ -867,7 +867,7 @@ select * from barbican.orders;
 select * from barbican.projects;
 select * from barbican.secret_store_metadata;
 select * from barbican.secrets;
-select * from secret_user_metadata;
+select * from barbican.secret_user_metadata;
 
 
 barbican.containers
@@ -890,7 +890,7 @@ barbican.secret_user_metadata
 token=`openstack token issue | grep "| id" | awk '{print $4}'`
 
 curl \
--X PUT http://127.0.0.1:9311/v1/secrets/ce0e5ad2-ba80-40c0-a311-653a5ec5a0aa/metadata \
+-X PUT http://127.0.0.1:9311/v1/secrets/10974e07-e6ac-417c-9d8e-07725a0b88d0/metadata \
 -H "Content-Type: application/json" \
 -H "X-Auth-Token: $token" \
 -d '{
@@ -902,7 +902,7 @@ curl \
 }'
 
 curl \
--X GET http://127.0.0.1:9311/v1/secrets/ce0e5ad2-ba80-40c0-a311-653a5ec5a0aa/metadata \
+-X GET http://127.0.0.1:9311/v1/secrets/10974e07-e6ac-417c-9d8e-07725a0b88d0/metadata \
 -H "Content-Type: application/json" \
 -H "X-Auth-Token: $token"
 

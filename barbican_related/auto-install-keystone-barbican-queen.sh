@@ -5,6 +5,7 @@ sudo timedatectl set-timezone Asia/Taipei
 sudo sed -i 's#SELINUX=permissive#SELINUX=disabled#g' /etc/selinux/config 
 sudo yum install https://repos.fedorapeople.org/repos/openstack/openstack-queens/rdo-release-queens-2.noarch.rpm -y
 sudo yum install python-openstackclient -y
+sudo yum install mod_wsgi httpd -y
 sudo yum install mariadb-server -y 
 sudo systemctl start mariadb.service 
 sudo systemctl enable mariadb.service
@@ -60,8 +61,12 @@ while(<>)
 sudo perl /root/keystone_conf_init.pl /etc/keystone/keystone_backup.conf > /etc/keystone/keystone.conf
 
 sudo su -s /bin/sh -c "keystone-manage db_sync" keystone 
-sudo keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone; keystone-manage credential_setup --keystone-user keystone --keystone-group keystone; keystone-manage bootstrap --bootstrap-password admin_foxconn --bootstrap-admin-url http://127.0.0.1:5000/v3/ --bootstrap-internal-url http://127.0.0.1:5000/v3/ --bootstrap-public-url http://127.0.0.1:5000/v3/ --bootstrap-region-id RegionOne
+sudo keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+sudo keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+sudo keystone-manage bootstrap --bootstrap-password admin_foxconn --bootstrap-admin-url http://127.0.0.1:5000/v3/ --bootstrap-internal-url http://127.0.0.1:5000/v3/ --bootstrap-public-url http://127.0.0.1:5000/v3/ --bootstrap-region-id RegionOne
+
 sudo ln -s /usr/share/keystone/wsgi-keystone.conf /etc/httpd/conf.d/
+# sudo cp /usr/share/keystone/wsgi-keystone.conf /etc/httpd/conf.d/
 
 sudo systemctl start httpd 
 sudo systemctl enable httpd
