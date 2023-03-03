@@ -323,12 +323,12 @@ defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
 
 sock_path="/var/lib/mysql/mysql.sock"
 
+--socket=$sock_path \
 ## 第一次須建立全量備份
 innobackupex \
 --defaults-file=$defaults_file \
 --user=root \
 --password=foxconn \
---socket=$sock_path \
 --no-timestamp $full_backup_path
 
 
@@ -341,6 +341,13 @@ innobackupex \
 --password=foxconn \
 --incremental-basedir=$full_backup_path \
 --incremental $increase_backup_path
+
+increase_backup_path="$backup_path/innobackupex/increase-1-full"
+innobackupex \
+--defaults-file=$defaults_file \
+--user=root \
+--password=foxconn \
+--no-timestamp $increase_backup_path
 
 
 ## 建立第一把key
@@ -376,7 +383,7 @@ count=0
 for i in {1..20}
 do
     count=$((count+=1))
-    keyname="key2-$count"
+    keyname="key-$count"
     echo -e "Now is creating $keyname"
 
 openstack secret order create \
@@ -780,10 +787,10 @@ barbican.orders
 barbican.projects
 barbican.secret_store_metadata
 barbican.secrets
-barbican.secret_user_metadata" > test.txt
+barbican.secret_user_metadata" > list.txt
 
-tables_file="/share/data-NFS/backup/mysql/centos7/table.txt"
-tables_file="/data/backup/table.txt"
+tables_file="/share/data-NFS/backup/mysql/centos7/list.txt"
+tables_file="/data/backup/mysql/list.txt"
 
 backup_path="/data/backup/mysql"
 increase_backup_path="$backup_path/parial"
@@ -798,6 +805,100 @@ innobackupex \
 $increase_backup_path
 
 innobackupex --databases="mydatabase.mytable mysql" $increase_backup_path
+
+mv /var/lib/mysql/barbican/alembic_version* ./
+mv /var/lib/mysql/barbican/certificate* ./
+mv /var/lib/mysql/barbican/project_* ./
+mv /var/lib/mysql/barbican/order_* ./
+mv /var/lib/mysql/barbican/container_acl_* ./
+mv /var/lib/mysql/barbican/secret_acl_* ./ 
+mv /var/lib/mysql/barbican/preferred_* ./
+mv /var/lib/mysql/barbican/transport_keys* ./
+mv /var/lib/mysql/barbican/secret_user_metadata* ./
+
+
+
+
+echo -e "barbican.projects
+barbican.kek_data
+barbican.encrypted_data
+barbican.orders
+barbican.containers
+barbican.container_acls
+barbican.container_secret
+barbican.container_consumer_metadata
+barbican.secrets
+barbican.secret_acls
+barbican.secret_stores
+barbican.secret_user_metadata
+barbican.secret_store_metadata" > /root/tables.txt
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--tables-file=/root/tables.txt \
+--target-dir=/data/backup/mysql/basic_barbican_required_tables \
+--datadir=/var/lib/mysql \
+--user=root \
+--password=foxconn
+
+
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--target-dir=/data/backup/mysql/test-barbican \
+--copy-back 
+
+## 可直接將備份的DB data作複製貼到/var/lib/mysql/還原DB
+systemctl stop mariadb.service
+rm -rf /var/lib/mysql/barbican/*
+# cp -rf /data/backup/mysql/test-barbican/barbican/* /var/lib/mysql/barbican/ 
+# cp -rf /data/backup/mysql/basic_barbican_required_tables/barbican/* /var/lib/mysql/barbican/ 
+cp -rf /data/backup/mysql/innobackupex/increase-1-full/barbican/* /var/lib/mysql/barbican/ 
+chown mysql:mysql -R /var/lib/mysql/*
+systemctl start mariadb.service
+
+mysql -u root -pfoxconn
+
+## 全還原
+systemctl stop mariadb.service
+rm -rf /var/lib/mysql/*
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--target-dir=/data/backup/mysql/innobackupex/increase-1-full \
+--copy-back 
+chown mysql:mysql -R /var/lib/mysql/*
+systemctl start mariadb.service
+
+
+systemctl restart mariadb.service
+
+# sudo su -s /bin/sh -c "barbican-manage db upgrade" barbican
+# sudo systemctl restart --now openstack-barbican-api
+
+
+containers,container_secret,container_consumer_metadata,encrypted_data,kek_data,orders,projects,secret_store_metadata,secrets,secret_user_metadata
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--databases=keystone,barbican \
+--tables=containers,container_secret,container_consumer_metadata,encrypted_data,kek_data,orders,projects,secret_store_metadata,secrets,secret_user_metadata \
+--target-dir=/data/backup/mysql/test-keystone-barbican \
+--datadir=/var/lib/mysql \
+--user=root --password=foxconn
+
+
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--databases=keystone \
+--target-dir=/data/backup/mysql/test-keystone \
+--datadir=/var/lib/mysql \
+--user=root --password=foxconn
+
+
+
 
 xtrabackup \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
@@ -881,6 +982,18 @@ barbican.secret_store_metadata
 barbican.secrets
 barbican.secret_user_metadata
 
+
+
+# 方式二：使用--tables-file参数
+echo "mydatabase.mytable" > /tmp/tables.txt  
+
+innobackupex --tables-file=/tmp/tables.txt \
+--user=backup \
+--password=backup \
+/path/to/backup 
+
+
+
 ```
 
 
@@ -890,7 +1003,7 @@ barbican.secret_user_metadata
 token=`openstack token issue | grep "| id" | awk '{print $4}'`
 
 curl \
--X PUT http://127.0.0.1:9311/v1/secrets/10974e07-e6ac-417c-9d8e-07725a0b88d0/metadata \
+-X PUT http://127.0.0.1:9311/v1/secrets/cc27a451-b37f-4a7c-a8fe-a1bac033d6dd/metadata \
 -H "Content-Type: application/json" \
 -H "X-Auth-Token: $token" \
 -d '{
@@ -902,9 +1015,16 @@ curl \
 }'
 
 curl \
--X GET http://127.0.0.1:9311/v1/secrets/10974e07-e6ac-417c-9d8e-07725a0b88d0/metadata \
+-X GET http://127.0.0.1:9311/v1/secrets/cc27a451-b37f-4a7c-a8fe-a1bac033d6dd/metadata \
 -H "Content-Type: application/json" \
 -H "X-Auth-Token: $token"
+
+
+curl \
+-X GET "http://127.0.0.01:9311/v1/secrets?limit=10&name=test-api-upload-3" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
 
 token=`openstack  token issue | grep "| id" | awk '{print $4}'`
 curl \
