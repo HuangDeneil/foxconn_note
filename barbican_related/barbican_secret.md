@@ -122,3 +122,61 @@ This command is provided by the python-barbicanclient plugin.
     
 - note : 192.168.60.200 是net-001 ，但是
 
+
+
+
+
+
+
+```bash
+
+
+f0bef9fee4e3bcaabae2a0c02d07d52527b2c3e66ca4a044963b73c42f91fbd191e119cfa9201edc64ed6dad15f0af64845eb5ed3b1a5809fb922d9842516628
+
+
+# user
+1e4c99ca5b2a4fcd98d3663e8e10228a
+# project
+cfdc857f42274e2ea6b30dd844e23ca5
+
+
+openstack role assignment list | grep cfdc857f42274e2ea6b30dd844e23ca5
+
+
+
+for i in `openstack role assignment list | grep cfdc857f42274e2ea6b30dd844e23ca5 | awk '{print $2}'`
+do
+    rolename=`openstack role list | grep $i | awk '{print $4}' `
+    echo -e "$i $rolename"
+done
+
+
+openstack secret order create asymmetric --name 'test-keypair' --bit-length 2048 --algorithm rsa
+
+
+
+export OS_PROJECT_DOMAIN_ID=default
+export OS_USER_DOMAIN_ID=default
+export OS_PROJECT_NAME=deneil.yz.huang@foxconn.com_20221109
+export OS_USERNAME=deneil.yz.huang@foxconn.com_674e
+export OS_PASSWORD=f0bef9fee4e3bcaabae2a0c02d07d52527b2c3e66ca4a044963b73c42f91fbd191e119cfa9201edc64ed6dad15f0af64845eb5ed3b1a5809fb922d9842516628
+export OS_AUTH_URL=http://192.168.60.200:35357/v3
+export OS_IDENTITY_API_VERSION=3
+export OS_IMAGE_API_VERSION=2
+export OS_AUTH_VERSION=3
+export OS_AUTH_TYPE=password
+export OS_REGION_NAME=RegionOne
+
+```
+
+
+
+
+
+
+
+
+
+
+
+

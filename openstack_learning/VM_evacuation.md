@@ -122,9 +122,15 @@ def getCpuinfoToJson(self, token, req_compute, compute_url):
 
 token=`openstack  token issue | grep "| id" | awk '{print $4}'`
 
+# tj-testBed
 REQ=`curl -X GET http://192.168.9.200:8774/v2.1/os-hypervisors/detail -H "Accept: application/json" -H "X-Auth-Token: $token"`
 
- echo  $REQ |  python -m json.tool | grep "created" | wc -l
+# KHQ-testBed
+REQ=`curl -X GET http://192.168.60.200:8774/v2.1/os-hypervisors/detail -H "Accept: application/json" -H "X-Auth-Token: $token"`
+
+echo  $REQ |  python -m json.tool > all.compute.json
+
+echo  $REQ |  python -m json.tool | grep "created" | wc -l
 
 
 ```

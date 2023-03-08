@@ -70,6 +70,24 @@ openstack role assignment list --user deneil \
 | 29d124f1f7c547bca9bf96681459fb04 | e2fc7d0f50f94ab0b9490ce006ef033d |       | b2afa04057b94e79a7526b834c65e903 |        | False     |
 | 29d124f1f7c547bca9bf96681459fb04 | e2fc7d0f50f94ab0b9490ce006ef033d |       | fb8b0121b8b34478b63584429e64ac91 |        | False     |
 +----------------------------------+----------------------------------+-------+----------------------------------+--------+-----------+
+
+
+
+
+
+[root@dct-queens-ctl-001 deneil-dev]# openstack user list | grep "deneil"
+| 1e4c99ca5b2a4fcd98d3663e8e10228a | deneil.yz.huang@foxconn.com_674e  
+
+
+openstack role assignment list --user 1e4c99ca5b2a4fcd98d3663e8e10228a
+
+
+openstack role add --user admin --project 767031bf35c949d2a168af493a66ebe0 admin
+openstack role add --user user --project 767031bf35c949d2a168af493a66ebe0 creator
+
+
+
+
 ```
 
 

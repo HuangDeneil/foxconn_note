@@ -866,9 +866,9 @@ do
     fi
 done
 ## Deletion all container
-for i in `openstack secret container list | awk '{print $2}'` 
+for i in `openstack secret container list | awk -F "|" '{print $2}'` 
 do 
-    if [[ ! "$i" == "|" || ! "$i" == "Container" ]]; then
+    if [[ ! "$i" == "Container" || ! "$i" == "href" ]]; then
         openstack secret container delete $i
         echo $i deleted
     fi

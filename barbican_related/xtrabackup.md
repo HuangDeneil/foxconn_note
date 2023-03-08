@@ -751,58 +751,334 @@ innobackupex \
 
 ```bash
 
-backup_path="/share/data-NFS/backup/mysql"
-backup_path="/data/backup/mysql"
-increase_backup_path="$backup_path/centos7/parial"
-defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
-
-innobackupex \
---defaults-file=$defaults_file \
---user=root \
---password=foxconn \
---no-timestamp $full_backup_path
-
-
-## https://blog.51cto.com/lookingdream/1905261
-## 创建部分备份（Creating Partial Backups）
-# 方式一：使用--include参数
-test_parial_backup_path="$backup_path/centos7/parial2"
---include='barbican.containers' \
-innobackupex --user=root --password=foxconn --no-timestamp $test_parial_backup_path
-
---defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
-
-# 方式二：使用--tables-file参数
-
-
-echo "mydatabase.mytable" > /tmp/tables.txt  
-
-echo -e "keystone.*
-barbican.containers
-barbican.container_secret
-barbican.container_consumer_metadata
-barbican.encrypted_data
-barbican.kek_data
-barbican.orders
-barbican.projects
-barbican.secret_store_metadata
-barbican.secrets
-barbican.secret_user_metadata" > list.txt
-
-tables_file="/share/data-NFS/backup/mysql/centos7/list.txt"
-tables_file="/data/backup/mysql/list.txt"
 
 backup_path="/data/backup/mysql"
-increase_backup_path="$backup_path/parial"
+increase_backup_path="$backup_path/full.add_new_user"
 defaults_file="/etc/my.cnf.d/mariadb-server.cnf"
 
---tables-file=$tables_file \
+## 全備份
 innobackupex \
 --defaults-file=$defaults_file \
 --user=root \
 --password=foxconn \
 --no-timestamp \
 $increase_backup_path
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--target-dir=$increase_backup_path \
+--user=root \
+--password=foxconn
+
+## mysql service
+systemctl stop mariadb.service
+systemctl start mariadb.service
+
+
+/data/backup/mysql/test-keystone
+
+/var/lib/mysql/keystone
+
+" # token required tables
+keystone.federated_user          # Empty (required)
+keystone.project_tag             # Empty (required)
+keystone.federation_protocol     # Empty (required)
+keystone.group                   # Empty
+keystone.nonlocal_user           # Empty
+keystone.assignment
+keystone.password
+keystone.user_group_membership   # Empty
+keystone.role
+keystone.implied_role            # Empty
+keystone.project_endpoint_group  # Empty
+keystone.user_option             # Empty
+keystone.project_endpoint        # Empty
+keystone.endpoint
+keystone.endpoint_group
+keystone.local_user
+keystone.project
+keystone.service_provider        # Empty
+keystone.service
+keystone.user
+"
+
+" # 
+keystone.revocation_event        # Empty  
+
+"
+
+"
+keystone.assignment
+keystone.endpoint
+keystone.endpoint_group
+keystone.federated_user
+keystone.federation_protocol
+keystone.group
+keystone.implied_role
+keystone.local_user
+keystone.nonlocal_user
+keystone.password
+keystone.project_endpoint
+keystone.project_endpoint_group
+keystone.project
+keystone.project_tag
+keystone.revocation_event
+keystone.role
+keystone.service
+keystone.service_provider
+keystone.user
+keystone.user_group_membership
+keystone.user_option
+"
+
+
+
+
+
+keystone.access_token            # Empty *
+keystone.mapping                 # Empty *
+keystone.system_assignment       #       *
+keystone.application_credential  # Empty *
+keystone.migrate_version         #       *
+keystone.region                  #       *
+keystone.token                       # Empty  *
+keystone.application_credential_role # Empty  *
+keystone.registered_limit        # Empty  *
+keystone.trust                   # Empty  *
+keystone.identity_provider       # Empty  *
+keystone.request_token           # Empty  *
+keystone.trust_role              # Empty  *
+keystone.config_register         # Empty  *
+keystone.id_mapping              # Empty  *
+keystone.policy_association      # Empty  *
+keystone.consumer                # Empty  *
+keystone.idp_remote_ids          # Empty  *
+keystone.credential              # Empty  
+keystone.sensitive_config        # Empty  
+keystone.limit                   # Empty  
+keystone.whitelisted_config      # Empty  
+keystone.policy
+keystone.endpoint_group
+
+
+list="access_token \
+mapping \
+system_assignment \
+application_credential \
+migrate_version \
+region \
+token \
+application_credential_role \
+registered_limit \
+trust \
+identity_provider \
+request_token \
+trust_role \
+config_register \
+id_mapping \
+policy_association \
+consumer \
+idp_remote_ids \
+credential \
+sensitive_config \
+limit \
+whitelisted_config \
+policy \
+endpoint_group"
+
+
+for i in $list
+do
+    mv /var/lib/mysql/keystone/${i}.* ./
+done
+
+
+
+keystone.access_token            # Empty *
+keystone.mapping                 # Empty *
+keystone.system_assignment       #       *
+keystone.application_credential  # Empty *
+keystone.migrate_version         #       *
+keystone.region                  #       *
+keystone.token                       # Empty  *
+keystone.application_credential_role # Empty  *
+keystone.registered_limit        # Empty  *
+keystone.trust                   # Empty  *
+keystone.identity_provider       # Empty  *
+keystone.request_token           # Empty  *
+keystone.trust_role              # Empty  *
+keystone.config_register         # Empty  *
+keystone.id_mapping              # Empty  *
+keystone.policy_association      # Empty  *
+keystone.consumer                # Empty  *
+keystone.idp_remote_ids          # Empty  *
+keystone.credential              # Empty  
+keystone.sensitive_config        # Empty  
+keystone.limit                   # Empty  
+keystone.whitelisted_config      # Empty  
+
+
+## keystone & barbican
+echo -e "\
+mysql.columns_priv
+mysql.column_stats
+mysql.db
+mysql.event
+mysql.func
+mysql.general_log
+mysql.gtid_slave_pos
+mysql.help_category
+mysql.help_keyword
+mysql.help_relation
+mysql.help_topic
+mysql.host
+mysql.index_stats
+mysql.innodb_index_stats
+mysql.innodb_table_stats
+mysql.plugin
+mysql.proc
+mysql.procs_priv
+mysql.proxies_priv
+mysql.roles_mapping
+mysql.servers
+mysql.slow_log
+mysql.tables_priv
+mysql.table_stats
+mysql.time_zone
+mysql.time_zone_leap_second
+mysql.time_zone_name
+mysql.time_zone_transition
+mysql.time_zone_transition_type
+mysql.user
+keystone.federated_user
+keystone.project_tag
+keystone.federation_protocol
+keystone.group
+keystone.nonlocal_user
+keystone.assignment
+keystone.password
+keystone.user_group_membership
+keystone.role
+keystone.implied_role
+keystone.project_endpoint_group
+keystone.user_option
+keystone.project_endpoint
+keystone.endpoint
+keystone.endpoint_group
+keystone.local_user
+keystone.project
+keystone.service_provider
+keystone.service
+keystone.user
+keystone.revocation_event
+barbican.projects
+barbican.kek_data
+barbican.encrypted_data
+barbican.orders
+barbican.containers
+barbican.container_acls
+barbican.container_secret
+barbican.container_consumer_metadata
+barbican.secrets
+barbican.secret_acls
+barbican.secret_stores
+barbican.secret_user_metadata
+barbican.secret_store_metadata" > /root/tables.txt
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--tables-file=/root/tables.txt \
+--target-dir=/data/backup/mysql/basic_test \
+--user=root \
+--password=foxconn
+
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--backup \
+--tables-file=/root/tables.txt \
+--target-dir=/data/backup/mysql/basic_keystone-barbican_required_tables \
+--user=root \
+--password=foxconn
+
+
+## 停止mysql service
+systemctl stop mariadb.service
+
+rm -rf /var/lib/mysql/*
+
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--target-dir=/data/backup/mysql/basic_test \
+--copy-back 
+
+# --target-dir=/data/backup/mysql/basic_test \
+# --target-dir=/data/backup/mysql/full.add_new_user \
+
+cp -rf /data/backup/mysql/full.add_new_user/keystone/* /var/lib/mysql/keystone/ 
+
+## 將 keystone 部分備份的資料夾內的
+cp -rf /data/backup/mysql/basic_test/keystone/* /var/lib/mysql/keystone/ 
+
+## 將 barbican 部分備份的資料夾內的
+cp -rf /data/backup/mysql/basic_test/barbican/* /var/lib/mysql/barbican/ 
+# cp -rf /data/backup/mysql/basic_barbican_required_tables/barbican/* /var/lib/mysql/barbican/ 
+
+## 修改傭有者權限
+chown mysql:mysql -R /var/lib/mysql/*
+
+## 啟動mysql
+systemctl start mariadb.service
+
+
+
+
+
+
+
+
+
+## 開啟mysql service ，先用mysql自行建立基本資料在 /var/lib/mysql
+systemctl start mariadb.service
+
+## 停止mysql service
+systemctl stop mariadb.service
+
+## 清理 /var/lib/mysql/mysql/ 
+rm -rf /var/lib/mysql/mysql/*
+
+## 建立 keystone & barbican folder
+mkdir /var/lib/mysql/keystone/ 
+mkdir /var/lib/mysql/barbican/
+
+## 將 keystone 部分備份的資料夾內的
+cp -rf /data/backup/mysql/basic_test/mysql/* /var/lib/mysql/mysql/ 
+
+## 將 keystone 部分備份的資料夾內的
+cp -rf /data/backup/mysql/basic_test/keystone/* /var/lib/mysql/keystone/ 
+
+## 將 barbican 部分備份的資料夾內的
+cp -rf /data/backup/mysql/basic_test/barbican/* /var/lib/mysql/barbican/ 
+
+## 修改擁有者權限
+chown mysql:mysql -R /var/lib/mysql/*
+
+## 啟動mysql
+systemctl start mariadb.service
+
+
+
+
+
+
+
+
+
+
+
 
 innobackupex --databases="mydatabase.mytable mysql" $increase_backup_path
 
@@ -837,7 +1113,6 @@ xtrabackup \
 --backup \
 --tables-file=/root/tables.txt \
 --target-dir=/data/backup/mysql/basic_barbican_required_tables \
---datadir=/var/lib/mysql \
 --user=root \
 --password=foxconn
 
@@ -859,18 +1134,23 @@ systemctl start mariadb.service
 
 mysql -u root -pfoxconn
 
+
+
 ## 全還原
 systemctl stop mariadb.service
+
 rm -rf /var/lib/mysql/*
+
 xtrabackup \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
 --target-dir=/data/backup/mysql/innobackupex/increase-1-full \
 --copy-back 
+
 chown mysql:mysql -R /var/lib/mysql/*
 systemctl start mariadb.service
 
 
-systemctl restart mariadb.service
+# systemctl restart mariadb.service
 
 # sudo su -s /bin/sh -c "barbican-manage db upgrade" barbican
 # sudo systemctl restart --now openstack-barbican-api

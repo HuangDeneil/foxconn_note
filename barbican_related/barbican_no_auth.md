@@ -3,11 +3,29 @@
 
 ```bash
 token=`openstack  token issue | grep "| id" | awk '{print $4}'`
-
 curl \
--X GET "http://192.168.77.15:9311/v1/orders?limit=10&offset=0" \
+-X GET "http://127.0.0.1:9311/v1/orders?limit=40&offset=0" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"
+
+
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+## 增加requst上限
+REQ=`curl -X GET "http://127.0.0.1:9311/v1/containers?limit=40&offset=0" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"`
+## 計算顯示上限
+echo  $REQ |  python -m json.tool | grep "created" | wc -l
+
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+REQ=`curl -X GET "http://192.168.9.200:9311/v1/containers?limit=40&offset=10" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"`
+echo  $REQ |  python -m json.tool | grep "created" | wc -l
+
+[root@deneil-test-network rocky]# echo  $REQ |  python -m json.tool | grep "created" | wc -l
+100
+
 
 
 curl \
