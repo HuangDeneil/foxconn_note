@@ -18,15 +18,178 @@ REQ=`curl -X GET "http://127.0.0.1:9311/v1/containers?limit=40&offset=0" \
 echo  $REQ |  python -m json.tool | grep "created" | wc -l
 
 token=`openstack token issue | grep "| id" | awk '{print $4}'`
-REQ=`curl -X GET "http://192.168.9.200:9311/v1/containers?limit=40&offset=10" \
+REQ=`curl -X GET "http://192.168.9.200:9311/v1/containers?offset=10&limit=5" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"`
 echo  $REQ |  python -m json.tool | grep "created" | wc -l
 
+
+
+# 10.67.46.15
+REQ=`curl -X GET \
+"http://10.67.46.15:9311/v1/containers" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"`
+
+172.16.16.22
+
+token="gAAAAABkCZWPDAPEjLvgx5DKIqQGwgEHTvwZKJw7rVTMxmzxT59qG5ZzA1yseyYp-fCxkHwPMNHpWJpsQ5Ra_RWy3W6tm7nZgWqlGpPY1zQlkqYjZQbOFidCc-4yfvstjMXKuQntOk2bDjU7xMF-amiJ9fVq0BLJs4rh_BUyw0AldyajPDnHpjU"
+
+curl -X GET http://10.67.46.15:8774/v2.1/flavors/detail -H "User-Agent: python-novaclient" -H "Accept: application/json" -H "X-Auth-Token: $token"
+
+curl -X GET \
+http://10.67.46.15:9311/v1/secrets \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+
+
+
+
+# 設定 firewall port
+
+
+# 9311
+
+# 1. 建立Rule
+openstack firewall group rule create \
+--protocol tcp \
+--destination-port 9311 \
+--destination-ip-address 192.168.9.200 \
+--action allow \
+--name opsk-barbican-rule
+
++------------------------+--------------------------------------+
+| Field                  | Value                                |
++------------------------+--------------------------------------+
+| Action                 | allow                                |
+| Description            |                                      |
+| Destination IP Address | 192.168.9.200                        |
+| Destination Port       | 9311                                 |
+| Enabled                | True                                 |
+| ID                     | 2e77ab9c-48fb-4dca-8ed8-dbc9ebee1819 |
+| IP Version             | 4                                    |
+| Name                   | opsk-barbican-rule                   |
+| Project                | 71e93aa11b6b40b9abf39a5a619f1f9d     |
+| Protocol               | tcp                                  |
+| Shared                 | False                                |
+| Source IP Address      | None                                 |
+| Source Port            | None                                 |
+| firewall_policy_id     | None                                 |
+| project_id             | 71e93aa11b6b40b9abf39a5a619f1f9d     |
++------------------------+--------------------------------------+
+
+
+# 2. 使用建立的Rule創建 Policy group
+## Ingress
+openstack firewall group policy add rule \
+<firewall-policy> <firewall-rule>
+openstack firewall group policy add rule \
+FHW-ingress-policy opsk-barbican-rule 
+
+
+openstack firewall group policy create \
+--firewall-rule opsk-barbican-rule \
+FHW-barbican-ingress-policy
+
+## Egress
+openstack firewall group policy create --firewall-rule FreeAll FHW-barbican-egress-policy
+
+# 3. 將剛建立的 Policy Group 建立 firewall group 綁在ex-router qr 介面上
+# 用指令將防火牆 policy 綁在 API_net <--> FHW 的 Router 中的 qr 介面 
+
+
+openstack firewall group create \
+--ingress-firewall-policy FHW-ingress-policy \
+--egress-firewall-policy  FHW-egress-policy \
+--port DCT-External-Route-FHW-Gw \
+--name FHW-fw-group
+
+
+
+
+
+
+
+
+[root@tj-testbed-control-001 ~]# openstack firewall group rule list | grep -B 2 -A 1 192.168.9.200
+| 0fd2634d-e73d-4600-9d4a-4daece1786cf | gpu-api-rule                    | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(555),               |
+|                                      |                                 |         |  allow                                         |
+--
+| 156dd05b-a9bc-4613-946b-e0b35579144b | rss-fixohdd-rule                | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(7488),              |
+|                                      |                                 |         |  allow                                         |
+--
+| 1629c028-8eef-488a-8aab-d3b5dffcc34a | gpu-api-rule                    | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(555),               |
+|                                      |                                 |         |  allow                                         |
+--
+| 256fae1e-9c05-4ce1-8b15-978200e38813 | rss-novacomputeapi-rule         | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(8774),              |
+|                                      |                                 |         |  allow                                         |
+--
+| 5dc4da2d-7611-43a6-bf81-8bab6d26c653 | rss-fixossd-rule                | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(7489),              |
+|                                      |                                 |         |  allow                                         |
+--
+| 7ee7bb1c-27d6-4c80-a053-a62866b23661 | rss-opsk-neutron-rule           | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(9696),              |
+|                                      |                                 |         |  allow                                         |
+--
+| 9324b940-f5e7-40e0-9df0-c3361d8693f7 | rss-hddbackup-rule              | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(7688),              |
+|                                      |                                 |         |  allow                                         |
+--
+| b8117044-82cf-470f-9c63-b94e4d2010de | admin-token-auth-rule           | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(35357),             |
+|                                      |                                 |         |  allow                                         |
+--
+| c830dd1e-f1bb-4ae9-b625-f7120fde4638 | fiwogw-rule                     | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(3128),              |
+|                                      |                                 |         |  allow                                         |
+--
+| db0ce8ad-59de-4e6b-9312-e36196bd7dc3 | token-auth-rule                 | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(5000),              |
+|                                      |                                 |         |  allow                                         |
+--
+| de43e272-c24f-4655-b4bc-93bcadcd7359 | osweb-http-rule                 | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(80),                |
+|                                      |                                 |         |  allow                                         |
+--
+| fbec91ea-a2df-46fe-86b8-c61924952c4c | rss-cinderapi-rule              | True    | TCP,                                           |
+|                                      |                                 |         |  source(port): none specified(none specified), |
+|                                      |                                 |         |  dest(port): 192.168.9.200(8776),              |
+|                                      |                                 |         |  allow                                         |
+
+
+
+
+
+
+ 
+
+
+
+
+
+
 [root@deneil-test-network rocky]# echo  $REQ |  python -m json.tool | grep "created" | wc -l
 100
 
-
+barbican的部屬是這份嗎 我發現這個好像是GPU api的 
 
 curl \
 -X GET "http://127.0.0.01:9311/v1/orders?limit=10&offset=0" \

@@ -1,81 +1,5 @@
-## openstack
-```bash 
-  loadbalancer amphora list  List amphorae (python-octaviaclient)
-  loadbalancer amphora show  Show the details of a single amphora (python-octaviaclient)
-  loadbalancer create  Create a load balancer (python-octaviaclient)
-  loadbalancer delete  Delete a load balancer (python-octaviaclient)
-  loadbalancer failover  Trigger load balancer failover (python-octaviaclient)
-  loadbalancer healthmonitor create  Create a health monitor (python-octaviaclient)
-  loadbalancer healthmonitor delete  Delete a health monitor (python-octaviaclient)
-  loadbalancer healthmonitor list  List health monitors (python-octaviaclient)
-  loadbalancer healthmonitor set  Update a health monitor (python-octaviaclient)
-  loadbalancer healthmonitor show  Show the details of a single health monitor (python-octaviaclient)
-  loadbalancer l7policy create  Create a l7policy (python-octaviaclient)
-  loadbalancer l7policy delete  Delete a l7policy (python-octaviaclient)
-  loadbalancer l7policy list  List l7policies (python-octaviaclient)
-  loadbalancer l7policy set  Update a l7policy (python-octaviaclient)
-  loadbalancer l7policy show  Show the details of a single l7policy (python-octaviaclient)
-  loadbalancer l7rule create  Create a l7rule (python-octaviaclient)
-  loadbalancer l7rule delete  Delete a l7rule (python-octaviaclient)
-  loadbalancer l7rule list  List l7rules for l7policy (python-octaviaclient)
-  loadbalancer l7rule set  Update a l7rule (python-octaviaclient)
-  loadbalancer l7rule show  Show the details of a single l7rule (python-octaviaclient)
-  loadbalancer list  List load balancers (python-octaviaclient)
-  loadbalancer listener create  Create a listener (python-octaviaclient)
-  loadbalancer listener delete  Delete a listener (python-octaviaclient)
-  loadbalancer listener list  List listeners (python-octaviaclient)
-  loadbalancer listener set  Update a listener (python-octaviaclient)
-  loadbalancer listener show  Show the details of a single listener (python-octaviaclient)
-  loadbalancer listener stats show  Shows the current statistics for a listener. (python-octaviaclient)
-  loadbalancer member create  Creating a member in a pool (python-octaviaclient)
-  loadbalancer member delete  Delete a member from a pool  (python-octaviaclient)
-  loadbalancer member list  List members in a pool (python-octaviaclient)
-  loadbalancer member set  Update a member (python-octaviaclient)
-  loadbalancer member show  Shows details of a single Member (python-octaviaclient)
-  loadbalancer pool create  Create a pool (python-octaviaclient)
-  loadbalancer pool delete  Delete a pool (python-octaviaclient)
-  loadbalancer pool list  List pools (python-octaviaclient)
-  loadbalancer pool set  Update a pool (python-octaviaclient)
-  loadbalancer pool show  Show the details of a single pool (python-octaviaclient)
-  loadbalancer quota defaults show  Show quota defaults (python-octaviaclient)
-  loadbalancer quota list  List quotas (python-octaviaclient)
-  loadbalancer quota reset  Resets quotas to default quotas (python-octaviaclient)
-  loadbalancer quota set  Update a quota (python-octaviaclient)
-  loadbalancer quota show  Show the quota details for a project (python-octaviaclient)
-  loadbalancer set  Update a load balancer (python-octaviaclient)
-  loadbalancer show  Show the details for a single load balancer (python-octaviaclient)
-  loadbalancer stats show  Shows the current statistics for a load balancer (python-octaviaclient)
-```
-
-
-
 # neutron
 ```bash
-  lb-agent-hosting-pool              Get loadbalancer agent hosting a pool.
-  lb-healthmonitor-associate         Create a mapping between a health monitor and a pool.
-  lb-healthmonitor-create            Create a health monitor.
-  lb-healthmonitor-delete            Delete a given health monitor.
-  lb-healthmonitor-disassociate      Remove a mapping from a health monitor to a pool.
-  lb-healthmonitor-list              List health monitors that belong to a given tenant.
-  lb-healthmonitor-show              Show information of a given health monitor.
-  lb-healthmonitor-update            Update a given health monitor.
-  lb-member-create                   Create a member.
-  lb-member-delete                   Delete a given member.
-  lb-member-list                     List members that belong to a given tenant.
-  lb-member-show                     Show information of a given member.
-  lb-member-update                   Update a given member.
-  lb-pool-create                     Create a pool.
-  lb-pool-delete                     Delete a given pool.
-  lb-pool-list                       List pools that belong to a given tenant.
-  lb-pool-list-on-agent              List the pools on a loadbalancer agent.
-  lb-pool-show                       Show information of a given pool.
-  lb-pool-stats                      Retrieve stats for a given pool.
-  lb-pool-update                     Update a given pool.
-  lb-vip-create                      Create a vip.
-  lb-vip-delete                      Delete a given vip.
-  lb-vip-list                        List vips that belong to a given tenant.
-  lb-vip-show                        Show information of a given vip.
-  lb-vip-update                      Update a given vip.
   lbaas-agent-hosting-loadbalancer   Get lbaas v2 agent hosting a loadbalancer.
   lbaas-healthmonitor-create         LBaaS v2 Create a healthmonitor.
   lbaas-healthmonitor-delete         LBaaS v2 Delete a given healthmonitor.
@@ -117,17 +41,55 @@
   lbaas-pool-update                  LBaaS v2 Update a given pool.
 ```
 
-neutron lb-healthmonitor-list
-
-neutron lb-member-show
 
 
+neutron lbaas-member-list fe089ae6-44dd-449e-bb2c-10c7b5bff932
 
 
-neutron lb-vip-list
 
+
+
+
+neutron lbaas-healthmonitor-list
+neutron lbaas-healthmonitor-show f1827c4d-1043-4025-967d-e1751a67ee7d
+
+neutron lbaas-loadbalancer-list 
+neutron lbaas-loadbalancer-show 8bc74f69-4865-41e9-ad26-a8a27ea8a575
+
+neutron lbaas-pool-list  
+neutron lbaas-pool-show fe089ae6-44dd-449e-bb2c-10c7b5bff932
 
 neutron lbaas-listener-list
+neutron lbaas-listener-show 3fda39d2-b57d-40cd-8353-4b629be3a628
+
+
+
+
+
+```bash
+
+[root@dct-queens-ctl-001 deneil-dev]# neutron lbaas-loadbalancer-list 
+neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.
++--------------------------------------+-----------------+---------------+---------------------+----------+---------+
+| id                                   | name            | vip_address   | provisioning_status | provider | timeout |
++--------------------------------------+-----------------+---------------+---------------------+----------+---------+
+| 8bc74f69-4865-41e9-ad26-a8a27ea8a575 | deneil-test-LBS | 192.168.77.13 | ACTIVE              | haproxy  |  300000 |
++--------------------------------------+-----------------+---------------+---------------------+----------+---------+
+
+[root@dct-queens-ctl-001 deneil-dev]# neutron lbaas-listener-list
+neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.
++--------------------------------------+--------------------------------------+-------------------+----------+---------------+----------------+
+| id                                   | default_pool_id                      | name              | protocol | protocol_port | admin_state_up |
++--------------------------------------+--------------------------------------+-------------------+----------+---------------+----------------+
+| 3fda39d2-b57d-40cd-8353-4b629be3a628 | 595589dd-10c5-4170-9202-fccada384ee6 | ssh-test-listener | TCP      |          8787 | True           |
++--------------------------------------+--------------------------------------+-------------------+----------+---------------+----------------+
+
+
+
+```
+
+
+
 
 
 
