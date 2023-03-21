@@ -43,7 +43,7 @@
 
 
 
-neutron lbaas-member-list fe089ae6-44dd-449e-bb2c-10c7b5bff932
+neutron lbaas-member-list 
 
 
 
@@ -51,20 +51,28 @@ neutron lbaas-member-list fe089ae6-44dd-449e-bb2c-10c7b5bff932
 
 
 neutron lbaas-healthmonitor-list
-neutron lbaas-healthmonitor-show f1827c4d-1043-4025-967d-e1751a67ee7d
+neutron lbaas-healthmonitor-show
 
 neutron lbaas-loadbalancer-list 
-neutron lbaas-loadbalancer-show 8bc74f69-4865-41e9-ad26-a8a27ea8a575
+neutron lbaas-loadbalancer-show 
+
+
 
 neutron lbaas-pool-list  
-neutron lbaas-pool-show fe089ae6-44dd-449e-bb2c-10c7b5bff932
+neutron lbaas-pool-show 
+neutron lbaas-pool-show 56b6687b-d982-4e96-9809-1767dcb44ec9
+
 
 neutron lbaas-listener-list
-neutron lbaas-listener-show 3fda39d2-b57d-40cd-8353-4b629be3a628
+neutron lbaas-listener-show
 
-
-
-
+neutron lbaas-member-create \
+--name NAME \
+--weight 1 \
+--subnet 5ada664c-6b24-4208-acb1-cd8c5133fd61 \
+--address 192.168.200.101 \
+--protocol-port 22 \
+56b6687b-d982-4e96-9809-1767dcb44ec9
 
 ```bash
 

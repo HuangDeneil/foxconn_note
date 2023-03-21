@@ -18,7 +18,7 @@ REQ=`curl -X GET "http://127.0.0.1:9311/v1/containers?limit=40&offset=0" \
 echo  $REQ |  python -m json.tool | grep "created" | wc -l
 
 token=`openstack token issue | grep "| id" | awk '{print $4}'`
-REQ=`curl -X GET "http://192.168.9.200:9311/v1/containers?offset=10&limit=5" \
+REQ=`curl -X GET "http://192.168.9.200:9311/v1/containers?limit=1000" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"`
 echo  $REQ |  python -m json.tool | grep "created" | wc -l
@@ -33,7 +33,35 @@ REQ=`curl -X GET \
 
 172.16.16.22
 
-token="gAAAAABkCZWPDAPEjLvgx5DKIqQGwgEHTvwZKJw7rVTMxmzxT59qG5ZzA1yseyYp-fCxkHwPMNHpWJpsQ5Ra_RWy3W6tm7nZgWqlGpPY1zQlkqYjZQbOFidCc-4yfvstjMXKuQntOk2bDjU7xMF-amiJ9fVq0BLJs4rh_BUyw0AldyajPDnHpjU"
+token="gAAAAABkEVvh1yJ-X3WQnYJfH99jCjRDVX2i7Jztc1qYvXgBlDVxSbDbad5QyQRBRChJvloFo-CWKabJR_MBAJCsgTCA_IH7HnR0UtGLG4b33bcMejsBV_DE2mRKYyxs-k_ZGs4bt49bSd2UENHPr5t_4MjMQh2mHkHtflxCTdp0GIVomT59puU"
+
+REQ=`curl -X GET "http://10.67.46.15:9311/v1/secrets/0004227c-6ba8-426e-bf84-44030bf7a0e0/payload" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"`
+
+curl \
+-X GET http://192.168.9.200:9311/v1/secrets/026b4d7f-6d6f-466a-8beb-c44d96129354/payload \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+curl -X GET http://osapi-fixo-1-tj.fixo.cloud:9311/v1/secrets/026b4d7f-6d6f-466a-8beb-c44d96129354/payload -H "Accept: text/plain" -H "X-Auth-Token: $token"
+
+curl -g -i -X GET http://osapi-fixo-1-tj.fixo.cloud:9311/v1/secrets/026b4d7f-6d6f-466a-8beb-c44d96129354/payload -H "User-Agent: osc-lib/1.9.0 keystoneauth1/3.4.1 python-requests/2.14.2 CPython/2.7.5" -H "Accept: text/plain" -H "X-Auth-Token: $token"
+
+curl -X GET \
+"http://10.67.46.15:9311/v1/secrets/01f49253-1a78-4166-bd87-12a5988dd7e7" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+curl -X GET \
+"http://10.67.46.15:9311/v1/secrets/01f49253-1a78-4166-bd87-12a5988dd7e7/payload" \
+-H "Accept: text/plain" -H "X-Auth-Token: $token"
+
+
+curl -X GET \
+"http://10.67.46.15:9311/v1/secrets" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
 
 curl -X GET http://10.67.46.15:8774/v2.1/flavors/detail -H "User-Agent: python-novaclient" -H "Accept: application/json" -H "X-Auth-Token: $token"
 
@@ -43,8 +71,76 @@ http://10.67.46.15:9311/v1/secrets \
 -H "X-Auth-Token: $token"
 
 
+{
+    "auth": {
+        "identity": {
+            "methods": [
+                "password"
+            ],
+            "password": {
+                "user": {
+                    "id": "cca05729470b4c52ba5971ec8c91521d",
+                    "password":"29c34dc888aeaccc88ce935eef5fa4b0d3f10c86cc58b0337d66aee7d809cc41712d138b28f65165393cc451b7b00d6f3053d65fc6146cf47eb8eafb77d6da3a"
+                }
+            }
+        },
+        "scope": {
+            "project": {
+                "domain": {
+                    "id": "default"
+                },
+                "name": "xing-huang.chen@foxconn.com_20230224"
+            }
+        }
+    }
+}
+{
+"user": {
+                    "id": "cca05729470b4c52ba5971ec8c91521d",
+                    "name" : "xing-huang.chen@foxconn.com_8e01",
+                    "password":"29c34dc888aeaccc88ce935eef5fa4b0d3f10c86cc58b0337d66aee7d809cc41712d138b28f65165393cc451b7b00d6f3053d65fc6146cf47eb8eafb77d6da3a"
+                },
+"project": {
+                "domain": {
+                    "id": "default"
+                },
+                "name": "xing-huang.chen@foxconn.com_20230224"
+            }
+        }
+}
+
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+echo $token
+token="gAAAAABkEmgLLxWb9G_AFG2vm4_LCduAenfwrA8lN_AOYs7Ubb2eadhkv5LkNY6aYrnJZuc-IvbvCBgiegERESZWcpLarAHMR_4jjeAx5PSZ9GvVsyP733IMeJAhurcad0BSr-r5KBK5wkD0nXRZq12v-CJuDoRB0IrZecJ8l_Xj202BA23eHIc"
+curl \
+-X GET http://192.168.9.200:9311/v1/secrets/76459408-f58b-4e7e-a548-2839a07b874a/payload \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+endpoint="192.168.9.200"
+endpoint="10.67.46.15"
+
+curl -X GET http://$endpoint:9311/v1/secrets/76459408-f58b-4e7e-a548-2839a07b874a/payload -H "Accept: text/plain" -H "X-Auth-Token:  $token"
+
+curl \
+-X GET http://10.67.46.15:9311/v1/secrets/76459408-f58b-4e7e-a548-2839a07b874a/payload \
+-H "Accept: text/plain" \
+-H "X-Auth-Token: $token"
+
+curl -X GET \
+http://osapi-fixo-1-tj.fixo.cloud:9311/v1/secrets/76459408-f58b-4e7e-a548-2839a07b874a/payload \
+-H "text/plain" \
+-H "X-Auth-Token: $token"
 
 
+
+curl -X GET \
+http://osapi-fixo-1-tj.fixo.cloud:9311/v1/secrets/76459408-f58b-4e7e-a548-2839a07b874a/payload \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+9311/v1/secrets/76459408-f58b-4e7e-a548-2839a07b874a/payload
 
 
 # 設定 firewall port
@@ -500,6 +596,30 @@ http://192.168.77.15:9311/v1/containers/ \
         }
         ]
 }'
+
+
+curl -X POST \
+http://192.168.60.200:9311/v1/containers/ \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '
+{
+    "name": "test certification", 
+    "type": "certificate", 
+    "secret_refs": [
+        {
+            "name": "private_key", 
+            "secret_ref": "http://192.168.60.200:9311/v1/secrets/549f97a4-7c9a-4d3e-93c5-e5cde3af694a"
+        }, 
+        {
+            "name": "certificate", 
+            "secret_ref": "http://192.168.60.200:9311/v1/secrets/578054da-13c8-47ea-97da-8565e3880a42"
+        }
+        ]
+}'
+
+
+
 
 token=`openstack token issue | grep "| id" | awk '{print $4}'`
 curl -X GET \

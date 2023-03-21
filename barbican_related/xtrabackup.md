@@ -380,7 +380,7 @@ innobackupex \
 
 ## 產生20把key
 count=0
-for i in {1..20}
+for i in {1..200}
 do
     count=$((count+=1))
     keyname="key-$count"
@@ -1066,7 +1066,7 @@ cp -rf /data/backup/mysql/basic_test/barbican/* /var/lib/mysql/barbican/
 ## 修改擁有者權限
 chown mysql:mysql -R /var/lib/mysql/*
 
-## 啟動mysql
+## 啟動mysqlcat 
 systemctl start mariadb.service
 
 
@@ -1121,6 +1121,11 @@ xtrabackup \
 xtrabackup \
 --defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
 --target-dir=/data/backup/mysql/test-barbican \
+--copy-back 
+
+xtrabackup \
+--defaults-file=/etc/my.cnf.d/mariadb-server.cnf \
+--target-dir=/data/backup/mysql/full.add_new_user \
 --copy-back 
 
 ## 可直接將備份的DB data作複製貼到/var/lib/mysql/還原DB
@@ -1304,6 +1309,12 @@ curl \
 -X GET "http://127.0.0.01:9311/v1/secrets?limit=10&name=test-api-upload-3" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"
+
+curl \
+-X GET "http://127.0.0.01:9311/v1/secrets?limit=1000" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
 
 
 token=`openstack  token issue | grep "| id" | awk '{print $4}'`
