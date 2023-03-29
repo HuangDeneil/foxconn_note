@@ -154,9 +154,11 @@ echo  $REQ |  python -m json.tool | grep "created" | wc -l
 | updated_at        | None                       |
 +-------------------+----------------------------+
 
-
+openstack hypervisor list
 
 openstack aggregate list
+
+
 [root@tj-testbed-control-001 ~]# openstack aggregate list
 +----+-----------------+-------------------+
 | ID | Name            | Availability Zone |
@@ -169,6 +171,17 @@ openstack aggregate list
 openstack aggregate create test-Spare-zone
 
 openstack aggregate set --zone test-Spare-zone test-Spare-zone
+
+
+
+## 從 FiXo-Zone-01 移除 tj-testbed-compute-006
+nova aggregate-remove-host FiXo-Zone-01 tj-testbed-compute-006
+
+
+nova aggregate-add-host test-Spare-zone tj-testbed-compute-006
+
+nova aggregate-remove-host FiXo-Zone-Groot tj-testbed-compute-006
+
 
 
 ## 從 FiXo-Zone-01 移除 tj-testbed-compute-005
@@ -379,7 +392,56 @@ Host tj-testbed-compute-005 has been successfully removed from aggregate 2
 +--------------------------------------+--------------------+--------------------------------------+
 FiCo-v2m4-Q1
 
+# FICO-Centos-7.9
+ef734296-e550-4198-9c66-84ad2be5fce4
 
+
+cinder create \
+--image ef734296-e550-4198-9c66-84ad2be5fce4 \
+--volume-type 
+
+--availability-zone Availability-Zone-1:dct-queens-com-003 \
+
+## KH-testBed u
+nova boot \
+--flavor FiCo-v2m4-Q1 \
+--availability-zone Availability-Zone-1:dct-queens-com-003 \
+--key-name deneil_-_keypair \
+--nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
+--security-groups e3cdc39a-53f0-427a-8098-48785d2e7b4e \
+--boot-volume 4a5a2523-adb2-4085-a0c5-46681f1db09c \
+--user-data /root/deneil-dev/password-cloud-init \
+deneil-VM-testing
+
+
+
+# deneil-VM-testing
+# 9fa46187-98e3-48e4-9dfa-5f4eb6124c5e
+# 192.168.77.25
+
+## KH-testBed admin
+nova boot \
+--flavor FiCo-v2m4-Q1 \
+--availability-zone Availability-Zone-1:dct-queens-com-003 \
+--key-name deneil-keypair \
+--nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
+--security-groups e3cdc39a-53f0-427a-8098-48785d2e7b4e \
+--boot-volume 4a5a2523-adb2-4085-a0c5-46681f1db09c \
+--user-data /root/deneil-dev/password-cloud-init \
+deneil-VM-testing
+
+
+
+
+
+
+
+
+
+
+
+
+## tj-testBed
 ## 開 VM 到指定 compute-node
 nova boot \
 --flavor FiCo-v2m4-Q1 \
