@@ -50,20 +50,50 @@ neutron lbaas-member-list
 
 
 
-neutron lbaas-healthmonitor-list
-neutron lbaas-healthmonitor-show
-
-neutron lbaas-loadbalancer-list 
-neutron lbaas-loadbalancer-show 
-
-
-
-neutron lbaas-pool-list  
-neutron lbaas-pool-show 
-neutron lbaas-pool-show 56b6687b-d982-4e96-9809-1767dcb44ec9
+## neutron lbaas-healthmonitor-list
+```bash
+## neutron lbaas-healthmonitor-list
+curl -X GET \
+http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/healthmonitors \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+```
 
 
-neutron lbaas-listener-list
+## neutron lbaas-loadbalancer-list 
+```bash
+## neutron lbaas-loadbalancer-list 
+curl -X GET \
+http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/loadbalancers \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+```
+
+## neutron lbaas-pool-list  
+```bash
+## neutron lbaas-pool-list  
+curl -X GET \
+http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/pools \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+```
+
+## neutron lbaas-listener-list
+```bash
+## neutron lbaas-listener-list
+curl -X GET 
+\http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/listeners \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+```
+
+
 neutron lbaas-listener-show
 
 neutron lbaas-member-create \

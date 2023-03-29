@@ -404,6 +404,14 @@ http://127.0.0.1:9311/v1/containers \
 -H "X-Auth-Token: $token"
 
 
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+curl -X GET \
+http://192.168.60.200:9311/v1/containers?name=test-key-2 \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+
 ## 所有的orders
 curl -X GET \
 http://127.0.0.1:9311/v1/orders \
@@ -495,6 +503,62 @@ curl -g -i \
 ### public key
 openstack secret store --name "the_key" --file the_key.pub --secret-type public --bit-length 2048 --algorithm rsa 
 # url : http://192.168.77.15:9311/v1/secrets/450d59de-1de1-4aea-a444-d1351baa5652
+
+openstack secret store --name "upload-from-CLI-test" --payload `cat ./upload-test.cer` --secret-type certificate --bit-length 2048 --algorithm rsa 
+openstack secret store --name "upload-from-CLI-test" --payload `cat ./upload-test.pem` --secret-type private --bit-length 2048 --algorithm rsa 
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+curl -X POST \
+"http://192.168.60.200:9311/v1/secrets" \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '{"name": "upload-from-API-test", 
+"algorithm": "rsa", 
+"mode": "", 
+"bit_length": 2048, 
+"secret_type": "certificate", 
+"payload": "-----BEGIN CERTIFICATE-----\nMIIBozCCAQwCAQEwDQYJKoZIhvcNAQELBQAwGjEYMBYGA1UEAwwPY2EtaW50QGFj\nbWUuY29tMB4XDTE4MTExOTA4MDgyOFoXDTI4MTExNjA4MDgyOFowGjEYMBYGA1UE\nAwwPc2VydmVyQGFjbWUuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCR\nqXTMyx3FDDqKibQNt8zaTZ1ZUw/hkG4rZwfQrmjwJU+rQQg1i7jxJs8kwNrc1z5f\nD+7MxmnlruyY51se+u+JkHa3Xud7XIfzFJNo4atq+MfTghJVcQf/RV8HgOzd6ES6\n/lQQQoRSj2EFgOSj5YDUr/CXFw/JTyLJiFbgkwDZpQIDAQABMA0GCSqGSIb3DQEB\nCwUAA4GBABZ01kv1JdiIr3bYUaVbliXfF0K+uhPlOayDTW0mPc2sGSz4aQXKoy/W\nwmWGNG/Frv7soVIETZD2er0dePl+nhAP/yNgJt6p6FYQGcU3XDqduMjGVwrdtQ/8\nlzQPX/zqJqFWIV4qa0YgtIUs2v22Ef1qex1M+AsLkk7ZB0N53rB3\n-----END CERTIFICATE-----", 
+"payload_content_type": "text/plain" 
+}'
+http://192.168.60.200:9311/v1/secrets/beff5d3a-7af5-4b40-9bf8-3cca21ab730c
+
+curl -X POST \
+"http://192.168.60.200:9311/v1/secrets" \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '{"name": "upload-from-API-test", 
+"algorithm": "rsa", 
+"mode": "", 
+"bit_length": 2048, 
+"secret_type": "private", 
+"payload": "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCRqXTMyx3FDDqKibQNt8zaTZ1ZUw/hkG4rZwfQrmjwJU+rQQg1\ni7jxJs8kwNrc1z5fD+7MxmnlruyY51se+u+JkHa3Xud7XIfzFJNo4atq+MfTghJV\ncQf/RV8HgOzd6ES6/lQQQoRSj2EFgOSj5YDUr/CXFw/JTyLJiFbgkwDZpQIDAQAB\nAoGAV6ghiOim5qEATcSmnSbB2ZGholKRGQ4Aro/XLSb4MaRSeF2vYgHObxkKyTRh\nwUqq1yxQadzxd244JZ/8vv0Fztu8gannHz5rb3rQPr/8tKIchqv5EMeTQA4TLczu\n3ln1j9Pqag3RLZStNIe88bFMrhPdceEf8Y4yN/tns6S/icECQQDB+8cs/yIuH+Xa\nca5pJTiiHDQ+cR+0eqmsBWgHH5d9fNVZdhgRb327J2YMQWR+XUU2c2MPQjmZn+lL\nK0o0rjYVAkEAwDrje5u1LoTVZWPKX1EJmhx6COuFWfdNjfTw+FPJdzzamyykHKBp\ney60H5oeVFhN3boNSCMEl5vGPqpOGc8JUQJAKgulr0YZpX+6dW+gix/LN6//Tu18\nHsVbk3KUir65OjTdlYd4TgcpbHBsuQlPe+hBgTzfYsZK79ZuXaGjcumzxQJBAKUM\navFguendJ5RMYCAC5mmp9aXfArpCOhaerp+o4Rw95bzCUY46tRaM/R79JvlocELm\nUi0T1AeQOmDnvPMv7mECQQCOvuwmI9HRUdhvJ8LiUMcWSY6yhICT0Epix0m+YEkg\na8a5yGIMSk16cvIPief/ZQOm6BT1e8BHCi41GIUNZ+Gk\n-----END RSA PRIVATE KEY-----", 
+"payload_content_type": "text/plain" 
+}'
+
+http://192.168.60.200:9311/v1/secrets/2ca430db-523d-461b-ac4e-7da26ed3b361
+
+curl -X POST \
+http://192.168.60.200:9311/v1/containers/ \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '
+{
+    "name": "upload-from-API-test", 
+    "type": "certificate", 
+    "secret_refs": [
+        {
+            "name": "private_key", 
+            "secret_ref": "http://192.168.60.200:9311/v1/secrets/2ca430db-523d-461b-ac4e-7da26ed3b361"
+        }, 
+        {
+            "name": "certificate", 
+            "secret_ref": "http://192.168.60.200:9311/v1/secrets/beff5d3a-7af5-4b40-9bf8-3cca21ab730c"
+        }
+        ]
+}'
+http://192.168.60.200:9311/v1/containers/59f187ef-6df5-4fa6-bcf7-b06827cbed8f
+
+
 
 
 ### private key
