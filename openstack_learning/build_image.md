@@ -420,7 +420,7 @@ openstack image create \
 --property release="true" \
 --tag os_type=linux \
 --tag os_version=Rocky_linux-9.0 \
-FICO-Rocky-linux-9.0
+Rocky-linux-9.0-upload-test-0704
 
 
 
@@ -499,7 +499,16 @@ openstack server create \
 deneil_rocky_barbican_backup_test
 
 
+openstack server create \
+--flavor 2dc3ad92-9759-4f9d-b2d7-6aef171cd394 \
+--image 03517740-3fe8-45c9-9866-36b313acd13d \
+--nic port-id=243204f2-4cc8-484e-ae08-780978b35835 \
+--security-group fc45a76d-9621-4458-a37b-f5b99f8271a0 \
+--key-name deneil_keypair \
+--user-data password-cloud-init \
+deneil_rocky_barbican_backup_test
 
+8b3b0cf9-a2cf-4075-8521-f35ecdea0878
 
 
 ### backup
@@ -537,7 +546,130 @@ openstack server create \
 deneil_test_key_rotation
 
 
+openstack server create \
+--flavor FiCo-v2m4-Q10 \
+--availability-zone test-Spare-zone:dct-queens-com-014 \
+--image ef734296-e550-4198-9c66-84ad2be5fce4 \
+--nic net-id=ca85ca51-0324-494a-9046-bf5876654516 \
+--security-group 6d72cd08-786a-4705-95e7-096a900928da \
+--key-name deneil-keypair \
+--user-data ~/deneil-dev/password-cloud-init \
+deneil_test_VM_migration
 
+
+openstack server create \
+--flavor FiCo-v1m2-Q1 \
+--image 98901246-af91-43d8-b5e6-a4506aa8f369 \
+--block-device source=volume,id=d620d971-b160-4c4e-8652-2513d74e2080,dest=volume,shutdown=preserve \
+  myInstanceWithVolume
+
+
+nova boot \
+  --flavor FiCo-v1m2-Q1 \
+  --availability-zone test-Spare-zone:dct-queens-com-007-minsky \
+  --security-groups controller_SG \
+  --nic port-id=5749c52c-fd4b-4ce2-8a7a-70f2725faf74 \
+  --boot-volume 955280b9-963b-4d2d-8cc5-7c86381b3d91 \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test1
+
+
+nova boot \
+  --flavor FiCo-v4m8-Q1 \
+  --security-groups b0f520aa-83dc-41f5-bac7-b17e6aa95557 \
+  --nic port-id=987ba1d2-bcdc-4b3e-aebb-d780c452973c \
+  --boot-volume abc14603-de74-49a4-9e47-d26c9ad4975e \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --key-name deneil-keypair \
+  --poll deneil-vm-test2
+
+
+# openstack port list | grep admin
+| 987ba1d2-bcdc-4b3e-aebb-d780c452973c | deneil-admin | fa:16:3e:aa:e4:f5 | ip_address='192.168.120.27', subnet_id='b755546e-ff4d-418d-9f28-59a389478a14'  | DOWN   |
+
+## deneil-201-2
+--nic net-id=b1e25bc7-99f3-4c61-b1fe-c4d7c9593d48
+
+
+
+6dbef5ec-fb02-4f11-9c52-c3e63d8d4bfe |deneil-test-volume-6
+0b582fea-0e5f-42d1-af63-61db93425e0e |deneil-test-volume-5
+f5fc8d88-0796-4f2a-aeb8-ad46ae27e6c5 |deneil-test-volume-4
+0b0fad0d-ede7-4348-a3f8-8aa9e075c54a |deneil-test-volume-3
+3e031aff-7d63-460b-a7ec-b1ab3b71dbb4 |deneil-test-volume-2
+dbae0c04-4314-45d4-832e-68bdf415b4c4 |deneil-test-volume-1
+955280b9-963b-4d2d-8cc5-7c86381b3d91 |Attached to deneil-minsky-vm-test1 on /dev/vda 
+
+## deneil-test-volume-1 , deneil-test-port-1
+nova boot \
+  --flavor FiCo-v4m8-Q1 \
+  --availability-zone test-Spare-zone:dct-queens-com-009-minsky \
+  --security-groups controller_SG \
+  --nic port-id=7653b3c9-392b-4fab-bff4-20ea666342b8 \
+  --boot-volume dbae0c04-4314-45d4-832e-68bdf415b4c4 \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test-evacuate-1
+
+## deneil-test-volume-2 , deneil-test-port-2
+nova boot \
+  --flavor FiCo-v4m8-Q1 \
+  --availability-zone test-Spare-zone:dct-queens-com-009-minsky \
+  --security-groups controller_SG \
+  --nic port-id=c44f53ca-ba53-4ec6-af88-be59f7f92ee4 \
+  --boot-volume 3e031aff-7d63-460b-a7ec-b1ab3b71dbb4 \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test-evacuate-2
+
+
+## deneil-test-volume-3 , deneil-test-port-3
+nova boot \
+  --flavor FiCo-v4m8-Q1 \
+  --availability-zone test-Spare-zone:dct-queens-com-009-minsky \
+  --security-groups controller_SG \
+  --nic port-id=5c3fb46f-de01-47bc-bea3-cacf92d58f20 \
+  --boot-volume 0b0fad0d-ede7-4348-a3f8-8aa9e075c54a \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test-evacuate-3
+
+
+## deneil-test-volume-4 , deneil-test-port-4
+nova boot \
+  --flavor FiCo-v4m8-Q1 \
+  --availability-zone test-Spare-zone:dct-queens-com-009-minsky \
+  --security-groups controller_SG \
+  --nic port-id=de5fb266-9fe6-4b10-bb1b-0ebc3cc9d9d1 \
+  --boot-volume f5fc8d88-0796-4f2a-aeb8-ad46ae27e6c5 \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test-evacuate-4
+
+## deneil-test-volume-5 , deneil-test-port-5
+nova boot \
+  --flavor FiCo-v4m8-Q1 \
+  --availability-zone test-Spare-zone:dct-queens-com-008-minsky \
+  --security-groups controller_SG \
+  --nic port-id=a9c9704c-70a3-44f9-aace-b397f9b115be \
+  --boot-volume 0b582fea-0e5f-42d1-af63-61db93425e0e\
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test-evacuate-5
+
+
+## deneil-test-volume-6 , deneil-test-port-6
+nova boot \
+  --flavor FiCo-v2m4-Q10 \
+  --availability-zone test-Spare-zone:dct-queens-com-008-minsky \
+  --security-groups controller_SG \
+  --nic port-id=da3a33e7-4469-4d41-9c62-6c7324c47c95 \
+  --boot-volume 6dbef5ec-fb02-4f11-9c52-c3e63d8d4bfe \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --poll deneil-minsky-vm-test-evacuate-6
+
+openstack port create --network a835ccf4-a388-4ead-9f13-372056b9fdf1 deneil-test-port-4
+
+## deneil-private-network (192.168.180.0/24)
+--nic net-id=a835ccf4-a388-4ead-9f13-372056b9fdf1
+c6719aeb-17fc-495f-a469-a803fef92d9e
+
+  --availability-zone test-Spare-zone:dct-queens-com-014 \
 
 
 openstack server create \

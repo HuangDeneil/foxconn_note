@@ -57,7 +57,6 @@ mount.cifs //192.168.77.13/share-73ec5d2f-c222-4947-8d48-d1f88c809a2e /share/dat
 -o username="Username",password="Password"
 
 
-
 ###### Detach share disk
 ### centos
 umount /mnt/data-cifs
@@ -66,12 +65,15 @@ umount /share/data-cifs
 ```
 
 ## installing `cifs-utils`
+
 ```bash
 # 先到還沒裝 & 有對外網路的VM
 yum install -y --downloadonly cifs-utils
 
 ```
+
 ## 會顯示要安裝的package們，且只會下載下來
+
 ```bash
 ...
 Downloading Packages:
@@ -85,25 +87,21 @@ Downloading Packages:
 ```
 
 ### 下載結束後使用root 到 `/` 下尋找檔案
+
 ```bash
 find . | grep avahi-libs-0.8-12.el9.x86_64.rpm
 ***
 ```
 
 ### 將把所有rpm file放到同個資料夾下進行安裝
+
 ```bash
 rpm -ivh *
-
 yum localinstall *
 ```
 
-
-
-
-
-
-
 ## 確認所有nova-compute
+
 ```bash
 192.168.60.114 dct-queens-com-007
 192.168.60.115 dct-queens-com-008
@@ -120,7 +118,6 @@ yum localinstall *
 192.168.60.93 dct-queens-com-005
 
 
-
 list="dct-queens-com-007 \
 dct-queens-com-010-teak \
 dct-queens-com-011-teak \
@@ -133,7 +130,7 @@ dct-queens-com-005"
 instance_id="0bd63f4a-035c-4ef8-88e1-cddb15f80a3e"
 cmd="cat /var/log/nova/nova-compute.log | grep $instance_id"
 ssh dct-queens-com-010-teak $cmd
-```
+
 cmd=""
 ssh dct-queens-com-010-teak grep ""
 
@@ -143,34 +140,13 @@ az-teak-010
 Availability-Zone-2
 4c481580-9d0c-4532-8bac-e50133373427
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 ```bash
 
 manila list
+manila list | grep f3a16da7-ca58-4fb7-b8cc-584b9f589999
+manila show f3a16da7-ca58-4fb7-b8cc-584b9f589999
 
 manila service-list
 
@@ -183,6 +159,173 @@ manila access-list <share>
 
 manila create
 manila help create
+
+manila show f3a16da7-ca58-4fb7-b8cc-584b9f589999
+
+/v2/shares
+
+```
+
+# KHQ-testBed
+
+## API
+
+```bash
+## API
+## https://docs.openstack.org/api-ref/shared-file-system/?expanded=list-shares-detail
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+
+## admin project
+## /v2/{admin_project_id}/shares/{share_id}/export_locations
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/d034846b0c0f4df4b0ef6cae1bd9b306/shares/f3a16da7-ca58-4fb7-b8cc-584b9f589999/export_locations \
+-H "X-Openstack-Manila-Api-Version: 2.42" \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+
+## admin project check whole platform shares
+## /v2/{admin_project_id}/shares/detail?all_tenants=True 
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/d034846b0c0f4df4b0ef6cae1bd9b306/shares/detail?all_tenants=True \
+-H "X-Openstack-Manila-Api-Version: 2.42" \
+-H "X-Auth-Token: $token"
+
+
+
+
+## admin project check whole platform shares
+## POST /v2/{project_id}/shares/{share_id}/action 
+curl -i -X POST http://osapi.dct-tb.mtjade.cloud:8786/v2/d034846b0c0f4df4b0ef6cae1bd9b306/shares/63e0fdb2-0029-4954-a3ca-19f9ce956e1e?force_delete=null \
+-H "X-Auth-Token: $token"
+
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/d034846b0c0f4df4b0ef6cae1bd9b306/shares/63e0fdb2-0029-4954-a3ca-19f9ce956e1e/export_locations \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+
+manila show 63e0fdb2-0029-4954-a3ca-19f9ce956e1e
+
+
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+
+## /v2/{project_id}/shares 
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/5a54b3853491478ead28060213c857c4/shares \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+
+## /v2/{project_id}/shares/detail
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/5a54b3853491478ead28060213c857c4/shares/detail \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" 
+
+## /v2/{project_id}/shares/{share_id}/export_locations
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/5a54b3853491478ead28060213c857c4/shares/f3a16da7-ca58-4fb7-b8cc-584b9f589999/export_locations \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+
+
+
+## /v2/{project_id}/shares/{share_id}/instances
+curl -i -X GET http://osapi.dct-tb.mtjade.cloud:8786/v2/5a54b3853491478ead28060213c857c4/shares/f3a16da7-ca58-4fb7-b8cc-584b9f589999/instances \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+```
+
+# lh-testBed
+
+## API
+
+```bash
+## 
+[root@lh-testbed-control-001 ~]# openstack project list | grep admin
+| e7e526aee74f41daadbb3e1104f5a404 | admin                                                            |
+
+[root@lh-testbed-control-001 deneil-dev]# manila list
++--------------------------------------+---------------+------+-------------+-----------+-----------+--------------------+------+-------------------+
+| ID                                   | Name          | Size | Share Proto | Status    | Is Public | Share Type Name    | Host | Availability Zone |
++--------------------------------------+---------------+------+-------------+-----------+-----------+--------------------+------+-------------------+
+| 056acb85-ce74-4538-a9c5-65ad82c421c2 | testSFS-NFS-2 | 100  | NFS         | available | False     | default_share_type |      | None              |
+| b4d0923b-305e-4435-b827-55dd7bf9b35f | testSFS-NFS   | 50   | NFS         | available | False     | default_share_type |      | None              |
+| cafc9911-04c7-4506-93c9-a1c10af6f0d9 | testSFS-NFS-3 | 150  | NFS         | available | False     | default_share_type |      | None              |
++--------------------------------------+---------------+------+-------------+-----------+-----------+--------------------+------+-------------------+
+
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+
+## admin project
+## /v2/{admin_project_id}/shares/{share_id}/export_locations
+curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/056acb85-ce74-4538-a9c5-65ad82c421c2/export_locations \
+-H "X-Auth-Token: $token" \
+-H "X-Openstack-Manila-Api-Version: 2.42" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+
+## admin project check whole platform shares
+## /v2/{admin_project_id}/shares/detail?all_tenants=True 
+curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/detail?all_tenants=True \
+-H "X-Openstack-Manila-Api-Version: 2.42" \
+-H "X-Auth-Token: $token"
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+REQ=`curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/detail?all_tenants=True \
+-H "X-Openstack-Manila-Api-Version: 2.42" \
+-H "X-Auth-Token: $token"`
+
+
+
+
+curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/056acb85-ce74-4538-a9c5-65ad82c421c2 -H "X-Auth-Token: $token" 
+
+
+## admin project check whole platform shares
+## POST /v2/{admin_project_id}/shares/{share_id}/action 
+curl -i -X POST http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/056acb85-ce74-4538-a9c5-65ad82c421c2?force_delete=null \
+-H "X-Auth-Token: $token"
+
+
+# GET /v2/{project_id}/snapshots
+curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/snapshots -H "X-Auth-Token: $token" 
+
+
+## admin only
+## GET v2/{project_id}/share-servers
+curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/share-servers -H "X-Auth-Token: $token" 
+
+
+
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+
+# DELETE /v2/{project_id}/shares/{share_id}  
+curl -i -X DELETE http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/056acb85-ce74-4538-a9c5-65ad82c421c2?force_delete=null -H "X-Auth-Token: $token"
+
+curl -i -X DELETE http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/b700b0dd-8992-45a5-ac57-cb856432da6d?force_delete=null -H "X-Auth-Token: $token"
+
+curl -i -X DELETE http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/b4d0923b-305e-4435-b827-55dd7bf9b35f?force_delete=null -H "X-Auth-Token: $token"
+curl -i -X DELETE http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/cafc9911-04c7-4506-93c9-a1c10af6f0d9?force_delete=null -H "X-Auth-Token: $token"
+
+
+cafc9911-04c7-4506-93c9-a1c10af6f0d9
+
+
+
+curl -i -X GET http://192.168.9.200:8786/v2/e7e526aee74f41daadbb3e1104f5a404/shares/63e0fdb2-0029-4954-a3ca-19f9ce956e1e/export_locations \
+-H "X-Auth-Token: $token" \
+-H "Accept: application/json" \
+-H "User-Agent: python-manilaclient"
+
+
+
+```
+
+## CLI help
+
+```bash
+
 
 [root@dct-queens-ctl-001 ~]# manila 
 usage: manila [--version] [-d] [--os-cache] [--os-reset-cache]

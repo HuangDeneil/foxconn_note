@@ -143,5 +143,6 @@ curl -g -i \
 -H "X-Auth-Token: $token"  
 ```
 
+cinder create --image-id 03517740-3fe8-45c9-9866-36b313acd13d 50 --name deneil-test
 
 

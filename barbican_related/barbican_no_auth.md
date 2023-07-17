@@ -1103,7 +1103,7 @@ curl \
 
 
 
-token=`openstack token issue | grep "| id" | awk '{print $4}'`
+token=`openstack token issue | grep " id " | awk '{print $4}'`
 
 curl -X PUT \
 http://127.0.0.1:9311/v1/containers/f2fb967d-2b11-43c4-a854-ed1cc1eebe85/metadata \
@@ -1123,7 +1123,7 @@ http://127.0.0.1:9311/v1/containers/f2fb967d-2b11-43c4-a854-ed1cc1eebe85/metadat
 -H "X-Auth-Token: $token"
 
 
-
+token="gAAAAABkrfkXcfy-0wM07n5qm4PkVQyCc4gtByW_-kab8FDjGZ3pmECKQISfPNwPgWJlzIpmsEgGzbrslWsDtqzh_im9WrpJ1ksv-pw58lxqYj4RAo3FgBACl2mLrepL5pzPc0KrO9zLH2KADTS3aZfCgePSRTF5Am28PywkJbPj4uxFq2uXDK8"
 
 
 
@@ -1187,9 +1187,23 @@ Content:
 
 # openstack secret order create
 ```bash
+
+
+openstack secret order create key --name 'admin-create-asy-test' --bit-length 256 --algorithm aes
+
+openstack secret order get http://192.168.60.200:9311/v1/orders/1275f8f8-868f-40b4-b365-9064f49af71d
+
+curl -X GET "http://192.168.60.200:9311/v1/secrets/d3a5c932-5950-447f-8f4d-df048f150ab4/payload" -H "X-Auth-Token: $token"
+
+curl -X GET "http://192.168.60.200:9311/v1/secrets?limit=100" -H "X-Auth-Token: $token"
+
+curl -X GET "http://192.168.60.200:9311/v1/secrets/e62bc8fb-e5e3-43bc-bd00-234fb97d0edd/payload" -H "X-Auth-Token: $token"
+
+http://192.168.60.200:9311/v1/secrets/
+
 openstack secret order create asymmetric --name 'secret-asy-test' --bit-length 2048 --algorithm rsa --debug
 
-token=`openstack token issue | grep "| id" | awk '{print $4}'`
+token=`openstack token issue | grep " id " | awk '{print $4}'`
 
 
 curl \

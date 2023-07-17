@@ -19,6 +19,11 @@ done
 sudo yum install -y openstack-nova
 
 
+curl -X GET http://osapi.dct-tb.mtjade.cloud:8774/v2.1/flavors/detail \
+-H "User-Agent: python-novaclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token
+
 
 
 

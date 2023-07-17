@@ -7,6 +7,19 @@
         - `openstack secret order create asymmetric --name 'secret-asy-001' --mode ctr --bit-length 1024 --algorithm rsa`
 
 
+```bash
+openstack secret order create asymmetric --name '20230609-deneil-test-1' --bit-length 2048 --algorithm rsa 
+```
+
+- admin :
+ +-----------+---------------------+---------------+
+ |  LEVEL    |    cannot exec      |   can exec    | 
+ +-----------+---------------------+---------------+
+ | order     | list & get & delete |               |
+ | container | list & delete       |   can get     |
+ | secret    | list & delete       |   can get     |
+ +-----------+---------------------+---------------+
+
 
 ```bash
 [root@dct-queens-ctl-001 ~]# openstack secret order create -h

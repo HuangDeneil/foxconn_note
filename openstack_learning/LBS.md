@@ -42,15 +42,20 @@
 ```
 
 
+```bash
+neutron lbaas-member-list {pool id}
 
-neutron lbaas-member-list 
+curl -g -i -X GET http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/pools/32601733-6b1e-4c1c-9c69-4668f9bd2405/members?pool_id=32601733-6b1e-4c1c-9c69-4668f9bd2405 \
+curl -g -i -X GET http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/pools/32601733-6b1e-4c1c-9c69-4668f9bd2405/members \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
 
-
-
-
+```
 
 
 ## neutron lbaas-healthmonitor-list
+
 ```bash
 ## neutron lbaas-healthmonitor-list
 curl -X GET \
@@ -60,22 +65,21 @@ http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/healthmonitors \
 -H "X-Auth-Token: $token"
 ```
 
-
 ## neutron lbaas-loadbalancer-list 
+
 ```bash
 ## neutron lbaas-loadbalancer-list 
-curl -X GET \
-http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/loadbalancers \
+curl -X GET http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/loadbalancers \
 -H "User-Agent: python-neutronclient" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"
 ```
 
 ## neutron lbaas-pool-list  
+
 ```bash
 ## neutron lbaas-pool-list  
-curl -X GET \
-http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/pools \
+curl -X GET http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/pools \
 -H "User-Agent: python-neutronclient" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"
@@ -83,10 +87,10 @@ http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/pools \
 ```
 
 ## neutron lbaas-listener-list
+
 ```bash
 ## neutron lbaas-listener-list
-curl -X GET 
-\http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/listeners \
+curl -X GET http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/listeners \
 -H "User-Agent: python-neutronclient" \
 -H "Accept: application/json" \
 -H "X-Auth-Token: $token"
@@ -125,12 +129,6 @@ neutron CLI is deprecated and will be removed in the future. Use openstack CLI i
 
 
 ```
-
-
-
-
-
-
 
 ```bash
 neutron lbaas-pool-list
@@ -171,15 +169,165 @@ neutron CLI is deprecated and will be removed in the future. Use openstack CLI i
 neutron lbaas-pool-show 90ba46fe-24ce-400e-9702-fc0c395c5bdc
 
 
+```bash
+token=`openstack token issue | grep " id " | awk '{print $4}'`
+neutron lbaas-loadbalancer-list
+curl -g -i -X GET http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/loadbalancers \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+[root@lh-testbed-control-001 ~]# neutron lbaas-loadbalancer-list
++--------------------------------------+--------------------------------------------------------------------------------+-----------------+---------------------+----------+
+| id                                   | name                                                                           | vip_address     | provisioning_status | provider |
++--------------------------------------+--------------------------------------------------------------------------------+-----------------+---------------------+----------+
+| 02088364-9435-4502-a7db-e843801da5dd | deneilpsdsingle0627-docqkpus7yv2-api_lb-irus4mqpnthv-loadbalancer-prbu2ssvgxdb | 192.168.120.19  | ACTIVE              | haproxy  |
+| 2c8fb980-a205-4cdc-9893-7202abb676a9 | deneilk8s062702-wkwa4miuuwn5-api_lb-stsazgdsu4gh-loadbalancer-7tsa4l46xr2v     | 192.168.120.12  | ACTIVE              | haproxy  |
+| 63c48b94-a029-426f-a1eb-2758cd03ef62 | deneiltestpsd2-puegynmug6qk-api_lb-uk7kp5ielwzm-loadbalancer-v43qo2eni76f      | 192.168.120.25  | ACTIVE              | haproxy  |
+| 6c5c62ad-d92e-4541-9f67-4545d0c3101e | deneilpsdha0627-lvnrbx3eqi5f-api_lb-m53esas3drou-loadbalancer-erlrj44j5s75     | 192.168.120.4   | ACTIVE              | haproxy  |
+| 8073d2bf-fce6-4613-bdeb-cc9a2c5f4abf | deneilk8s062702-wkwa4miuuwn5-etcd_lb-o3ob7uqa67by-loadbalancer-e5zc3wn4yomb    | 192.168.120.10  | ACTIVE              | haproxy  |
+| 87238259-6a0b-44c0-9550-5fdb010fbb7c | deneil-test-LBS                                                                | 192.168.120.200 | ACTIVE              | haproxy  |
++--------------------------------------+--------------------------------------------------------------------------------+-----------------+---------------------+----------+
+
+
+
+## http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/listeners
+neutron lbaas-listener-list
+
+curl -g -i -X GET http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/listeners \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+[root@lh-testbed-control-001 ~]# neutron lbaas-listener-list
++--------------------------------------+--------------------------------------+----------------------------------------------------------------------------+----------+---------------+----------------+
+| id                                   | default_pool_id                      | name                                                                       | protocol | protocol_port | admin_state_up |
++--------------------------------------+--------------------------------------+----------------------------------------------------------------------------+----------+---------------+----------------+
+| 1a2b0edc-1253-445b-8352-8ca3c4f1c355 | 068cf78a-613a-4c75-9e22-b56fb5cd615b | deneiltestpsd2-puegynmug6qk-api_lb-uk7kp5ielwzm-listener-qlfpy6fqsddg      | TCP      |           443 | True           |
+| 32c3eac3-7110-47fe-bb91-608b83c35f89 | 20aa7166-2afd-452e-9c33-9e7263058b88 | deneilk8s062702-wkwa4miuuwn5-etcd_lb-o3ob7uqa67by-listener-3wke7fps2mgd    | TCP      |          2379 | True           |
+| 3a63362a-9ace-4676-8a8b-63560f71d127 | 5d3fc355-b152-4f35-a90d-ffd306db3e65 | test-k8s-dashboard                                                         | TCP      |            80 | True           |
+| 9470afcc-1b31-42f8-af34-c91624f8170e | 19975dd0-2ae2-466b-9333-5ca807b7759c | deneilpsdha0627-lvnrbx3eqi5f-api_lb-m53esas3drou-listener-2fkcdp3dnthc     | TCP      |           443 | True           |
+| 9d1733f7-c9da-450a-bcb0-03978dc1cf02 | 9a5346f4-5885-436f-b1ed-a2392b326b46 | deneilk8s062702-wkwa4miuuwn5-api_lb-stsazgdsu4gh-listener-b36zyhvrrbwe     | TCP      |          6443 | True           |
+| a409b77f-3a2e-4673-898a-39c80ef0d49e | 48f10e10-9086-4688-a1de-bd663fa7b688 | ssh-test-listener                                                          | TCP      |            22 | True           |
+| be096d7a-0f98-40bf-99a7-2d0cde72b34f | f3865152-4258-4b33-8d33-542c8ecf3492 | deneilpsdsingle0627-docqkpus7yv2-api_lb-irus4mqpnthv-listener-smdynp6wan2z | TCP      |           443 | True           |
++--------------------------------------+--------------------------------------+----------------------------------------------------------------------------+----------+---------------+----------------+
+
+
+neutron lbaas-member-list {pool}
+
+neutron lbaas-member-list 19975dd0-2ae2-466b-9333-5ca807b7759c
+
+token=`openstack token issue | grep " id " | awk '{print $4}'`
+
+curl -g -i -X GET http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/pools/19975dd0-2ae2-466b-9333-5ca807b7759c/members \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+[root@lh-testbed-control-001 ~]# neutron lbaas-member-list f3865152-4258-4b33-8d33-542c8ecf3492
++--------------------------------------+--------------------------------------------------------------------------------------------------------+----------------+---------------+--------+--------------------------------------+----------------+
+| id                                   | name                                                                                                   | address        | protocol_port | weight | subnet_id                            | admin_state_up |
++--------------------------------------+--------------------------------------------------------------------------------------------------------+----------------+---------------+--------+--------------------------------------+----------------+
+| 65200899-76fa-4c3b-bb2b-0eed6a853a3f | deneilpsdsingle0627-docqkpus7yv2-kube_masters-heigd25td3yb-0-2dkuc4mpc6kq-api_pool_member-pdzwvojbhrbz | 192.168.120.16 |         30443 |      1 | b755546e-ff4d-418d-9f28-59a389478a14 | True           |
++--------------------------------------+--------------------------------------------------------------------------------------------------------+----------------+---------------+--------+--------------------------------------+----------------+
+
+neutron lbaas-member-delete {member} {pool}
+neutron --debug lbaas-member-delete 65200899-76fa-4c3b-bb2b-0eed6a853a3f f3865152-4258-4b33-8d33-542c8ecf3492
+
+
+# 9696/v2.0/lbaas/pools/{pool_id}/members/{member_id}
+curl -g -i -X DELETE http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/pools/f3865152-4258-4b33-8d33-542c8ecf3492/members/65200899-76fa-4c3b-bb2b-0eed6a853a3f \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+
+### delete pool
+neutron --debug lbaas-pool-delete f3865152-4258-4b33-8d33-542c8ecf3492
+
+token=`openstack token issue | grep " id " | awk '{print $4}'`
+
+curl -g -i -X DELETE http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/pools/f3865152-4258-4b33-8d33-542c8ecf3492 \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+{"NeutronError": {"message": "healthmonitor 40dc9b88-f959-42fb-bf7e-de9e7e185c6d is using this pool", "type": "EntityInUse", "detail": ""}}
+
+
+neutron lbaas-healthmonitor-list
+
+neutron --debug lbaas-healthmonitor-delete 40dc9b88-f959-42fb-bf7e-de9e7e185c6d
+curl -g -i -X DELETE http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/healthmonitors/40dc9b88-f959-42fb-bf7e-de9e7e185c6d \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+neutron --debug lbaas-listener-delete be096d7a-0f98-40bf-99a7-2d0cde72b34f
+curl -g -i -X DELETE http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/listeners/be096d7a-0f98-40bf-99a7-2d0cde72b34f \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
+
+
+neutron lbaas-loadbalancer-list
+
+neutron --debug lbaas-loadbalancer-delete 02088364-9435-4502-a7db-e843801da5dd
+curl -g -i -X DELETE http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/loadbalancers/02088364-9435-4502-a7db-e843801da5dd \
+-H "User-Agent: python-neutronclient" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: $token"
 
 
 
 
+  lbaas-agent-hosting-loadbalancer   Get lbaas v2 agent hosting a loadbalancer.
+  lbaas-healthmonitor-create         LBaaS v2 Create a healthmonitor.
+  lbaas-healthmonitor-delete         LBaaS v2 Delete a given healthmonitor.
+  lbaas-healthmonitor-list           LBaaS v2 List healthmonitors that belong to a given tenant.
+  lbaas-healthmonitor-show           LBaaS v2 Show information of a given healthmonitor.
+  lbaas-healthmonitor-update         LBaaS v2 Update a given healthmonitor.
+  lbaas-l7policy-create              LBaaS v2 Create L7 policy.
+  lbaas-l7policy-delete              LBaaS v2 Delete a given L7 policy.
+  lbaas-l7policy-list                LBaaS v2 List L7 policies that belong to a given listener.
+  lbaas-l7policy-show                LBaaS v2 Show information of a given L7 policy.
+  lbaas-l7policy-update              LBaaS v2 Update a given L7 policy.
+  lbaas-l7rule-create                LBaaS v2 Create L7 rule.
+  lbaas-l7rule-delete                LBaaS v2 Delete a given L7 rule.
+  lbaas-l7rule-list                  LBaaS v2 List L7 rules that belong to a given L7 policy.
+  lbaas-l7rule-show                  LBaaS v2 Show information of a given rule.
+  lbaas-l7rule-update                LBaaS v2 Update a given L7 rule.
+  lbaas-listener-create              LBaaS v2 Create a listener.
+  lbaas-listener-delete              LBaaS v2 Delete a given listener.
+  lbaas-listener-list                LBaaS v2 List listeners that belong to a given tenant.
+  lbaas-listener-show                LBaaS v2 Show information of a given listener.
+  lbaas-listener-update              LBaaS v2 Update a given listener.
+  lbaas-loadbalancer-create          LBaaS v2 Create a loadbalancer.
+  lbaas-loadbalancer-delete          LBaaS v2 Delete a given loadbalancer.
+  lbaas-loadbalancer-list            LBaaS v2 List loadbalancers that belong to a given tenant.
+  lbaas-loadbalancer-list-on-agent   List the loadbalancers on a loadbalancer v2 agent.
+  lbaas-loadbalancer-show            LBaaS v2 Show information of a given loadbalancer.
+  lbaas-loadbalancer-stats           Retrieve stats for a given loadbalancer.
+  lbaas-loadbalancer-status          Retrieve status for a given loadbalancer.
+  lbaas-loadbalancer-update          LBaaS v2 Update a given loadbalancer.
+  lbaas-member-create                LBaaS v2 Create a member.
+  lbaas-member-delete                LBaaS v2 Delete a given member.
+  lbaas-member-list                  LBaaS v2 List members that belong to a given pool.
+  lbaas-member-show                  LBaaS v2 Show information of a given member.
+  lbaas-member-update                LBaaS v2 Update a given member.
+  lbaas-pool-create                  LBaaS v2 Create a pool.
+  lbaas-pool-delete                  LBaaS v2 Delete a given pool.
+  lbaas-pool-list                    LBaaS v2 List pools that belong to a given tenant.
+  lbaas-pool-show                    LBaaS v2 Show information of a given pool.
+  lbaas-pool-update                  LBaaS v2 Update a given pool.
 
 
 
 
-
+```
 
 
 

@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: ca.pem
+    server: https://deneilk8s-5tuq776kepiv.lh-6.fixo.cloud:6443
+  name: deneilk8s
+contexts:
+- context:
+    cluster: deneilk8s
+    user: deneilk8s
+  name: deneilk8s
+current-context: deneilk8s
+kind: Config
+preferences: {}
+users:
+- name: deneilk8s
+  user:
+    client-certificate: cert.pem
+    client-key: key.pem

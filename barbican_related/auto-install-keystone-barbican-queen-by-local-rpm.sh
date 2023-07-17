@@ -9,6 +9,8 @@ fi
 
 sudo cp $share /root/
 
+sudo yum localinstall -y rdo-release-queens-2.noarch.rpm
+
 sudo yum localinstall -y /root/required/update/* 
 sudo yum localinstall -y /root/required/vim/* 
 sudo yum localinstall -y /root/required/nano/* 

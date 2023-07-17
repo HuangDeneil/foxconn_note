@@ -90,7 +90,7 @@ p6=subprocess.Popen("awk 'NR>3{print $2}'",shell=True,stdin=p5.stdout,stdout=sub
 
 
 ## CPU info 
-### from May 
+
 ```python
 
 def getCpuinfoToJson(self, token, req_compute, compute_url):
@@ -154,11 +154,9 @@ echo  $REQ |  python -m json.tool | grep "created" | wc -l
 | updated_at        | None                       |
 +-------------------+----------------------------+
 
-openstack hypervisor list
+
 
 openstack aggregate list
-
-
 [root@tj-testbed-control-001 ~]# openstack aggregate list
 +----+-----------------+-------------------+
 | ID | Name            | Availability Zone |
@@ -171,77 +169,6 @@ openstack aggregate list
 openstack aggregate create test-Spare-zone
 
 openstack aggregate set --zone test-Spare-zone test-Spare-zone
-
-
-openstack aggregate create test-evacuate-zone
-openstack aggregate set --zone test-evacuate-zone test-evacuate-zone
-
-
-## 從 FiXo-Zone-01 移除 tj-testbed-compute-005
-nova aggregate-remove-host FiXo-Zone-01 tj-testbed-compute-005
-## 將 tj-testbed-compute-005 加進去到 test-evacuate-zone
-nova aggregate-add-host test-evacuate-zone tj-testbed-compute-005
-
-nova aggregate-add-host FiXo-Zone-01 tj-testbed-compute-005
-
-## tj-testbed-compute-005
-nova aggregate-remove-host test-Spare-zone tj-testbed-compute-005
-nova aggregate-add-host test-evacuate-zone tj-testbed-compute-005
-
-nova aggregate-remove-host test-evacuate-zone tj-testbed-compute-005
-nova aggregate-add-host test-Spare-zone tj-testbed-compute-005
-
-## tj-testbed-compute-006
-nova aggregate-remove-host test-Spare-zone tj-testbed-compute-006
-nova aggregate-add-host test-evacuate-zone tj-testbed-compute-006
-
-nova aggregate-remove-host test-evacuate-zone tj-testbed-compute-006
-nova aggregate-add-host test-Spare-zone tj-testbed-compute-006
-
-openstack availability zone list
-
-## nova-compute.service
-# systemctl stop openstack-nova-compute.service
-# systemctl start openstack-nova-compute.service
-# systemctl status openstack-nova-compute.service
-
-cmd="systemctl stop openstack-nova-compute.service"
-cmd="systemctl start openstack-nova-compute.service"
-cmd="systemctl status openstack-nova-compute.service"
-
-ssh tj-testbed-compute-005 $cmd
-ssh tj-testbed-compute-006 $cmd
-
-## 顯示指定節點上的VM們
-nova list --all --host tj-testbed-compute-005
-nova list --all --host tj-testbed-compute-006
-
-
-
-python evacuation.py tj-testbed-compute-005
-python evacuation.py tj-testbed-compute-006
-
-
-
-cmd="systemctl stop openstack-nova-compute.service"
-ssh tj-testbed-compute-005 $cmd
-
-## nova evacuate --force {vm} {evac_node}
-nova evacuate --force 605f9c28-5092-4654-accf-20c25fd30b4d tj-testbed-compute-006
-
-nova show 605f9c28-5092-4654-accf-20c25fd30b4d | grep 'OS-EXT-SRV-ATTR:host\|status\|os-extended-volumes:volumes_attached'
-
-
-
-
-## 從 FiXo-Zone-01 移除 tj-testbed-compute-006
-nova aggregate-remove-host FiXo-Zone-01 tj-testbed-compute-006
-
-
-nova aggregate-add-host test-Spare-zone tj-testbed-compute-006
-
-nova aggregate-remove-host FiXo-Zone-Groot tj-testbed-compute-006
-
 
 
 ## 從 FiXo-Zone-01 移除 tj-testbed-compute-005
@@ -264,6 +191,125 @@ nova aggregate-add-host FiXo-Zone-Groot tj-testbed-compute-005
 
 
 
+
+[root@dct-queens-ctl-001 ~]# openstack hypervisor list
++----+---------------------------+-----------------+----------------+-------+
+| ID | Hypervisor Hostname       | Hypervisor Type | Host IP        | State |
++----+---------------------------+-----------------+----------------+-------+
+|  3 | dct-queens-com-002        | QEMU            | 192.168.60.19  | up    |
+|  6 | dct-queens-com-003        | QEMU            | 192.168.60.21  | up    |
+|  9 | dct-queens-com-001        | QEMU            | 192.168.60.17  | up    |
+| 12 | dct-queens-com-005        | QEMU            | 192.168.60.93  | up    |
+| 15 | dct-queens-com-004        | QEMU            | 192.168.60.92  | up    |
+| 18 | dct-queens-com-006-gpu    | QEMU            | 192.168.60.65  | up    |
+| 50 | dct-queens-com-013        | QEMU            | 192.168.60.119 | up    |
+| 53 | dct-queens-com-015        | QEMU            | 192.168.60.121 | up    |
+| 68 | dct-queens-com-014        | QEMU            | 192.168.60.120 | up    |
+| 71 | dct-queens-com-007-minsky | QEMU            | 192.168.60.112 | up    |
+| 74 | dct-queens-com-008-minsky | QEMU            | 192.168.60.113 | up    |
+| 77 | dct-queens-com-009-minsky | QEMU            | 192.168.60.114 | up    |
++----+---------------------------+-----------------+----------------+-------+
+nova list --all --host dct-queens-com-007-minsky
+nova list --all --host dct-queens-com-008-minsky
+nova list --all --host dct-queens-com-009-minsky
+
+
+
+openstack aggregate create test-evacuate-zone
+openstack aggregate set --zone test-evacuate-zone test-evacuate-zone
+
+
+## 將 minsky 加進去到 test-Spare-zone
+nova aggregate-add-host 113 dct-queens-com-007-minsky
+nova aggregate-add-host 113 dct-queens-com-008-minsky
+nova aggregate-add-host 113 dct-queens-com-009-minsky
+nova aggregate-add-host 113 dct-queens-com-014
+
+nova aggregate-add-host test-Spare-zone dct-queens-com-007-minsky
+
+
+
+
+[root@dct-queens-ctl-001 autoevacuation]# openstack aggregate list
++-----+-----------------------+-----------------------+
+|  ID | Name                  | Availability Zone     |
++-----+-----------------------+-----------------------+
+|   9 | AZ-1                  | Availability-Zone-1   |
+|  18 | AZ-2                  | Availability-Zone-2   |
+|  27 | Availability-Zone-GPU | Availability-Zone-GPU |
+|  75 | stringray-gpu         | stringray-gpu         |
+|  95 | AZ-3                  | Availability-Zone-3   |
+| 113 | test-Spare-zone       | test-Spare-zone       |
+| 122 | test-evacuate-zone    | test-evacuate-zone    |
++-----+-----------------------+-----------------------+
+# test-Spare-zone to test-evacuate-zone
+# com-008
+nova aggregate-remove-host test-Spare-zone dct-queens-com-008-minsky
+nova aggregate-add-host test-evacuate-zone dct-queens-com-008-minsky
+
+# com-009
+nova aggregate-remove-host test-Spare-zone dct-queens-com-009-minsky
+nova aggregate-add-host test-evacuate-zone dct-queens-com-009-minsky
+
+
+
+
+# test-evacuate-zone to  test-Spare-zone
+# com-008
+nova aggregate-remove-host test-evacuate-zone dct-queens-com-008-minsky
+nova aggregate-add-host test-Spare-zone dct-queens-com-008-minsky
+
+# com-009
+nova aggregate-remove-host test-evacuate-zone dct-queens-com-009-minsky
+nova aggregate-add-host test-Spare-zone dct-queens-com-009-minsky
+
+
+openstack aggregate remove host test-evacuate-zone dct-queens-com-009-minsky --debug
+
+curl -g -i -X POST http://osapi.dct-tb.mtjade.cloud:8774/v2.1/os-aggregates/122/action \
+-H "User-Agent: python-novaclient" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: {SHA1}a7c1a07f90e34a3ae99512c41910746e6d6a45d6" \
+-d '{"remove_host": {"host": "dct-queens-com-009-minsky"}}'
+
+
+openstack aggregate add host test-Spare-zone dct-queens-com-009-minsky --debug
+
+
+curl -g -i -X POST http://osapi.dct-tb.mtjade.cloud:8774/v2.1/os-aggregates/113/action \
+-H "User-Agent: python-novaclient" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-H "X-Auth-Token: {SHA1}591de346b7d4ecc219779b4fbb9a10a54a93a82d" \
+-d '{"add_host": {"host": "dct-queens-com-009-minsky"}}'
+
+
+nova aggregate-add-host 9 dct-queens-com-007-minsky
+
+openstack availability zone list
+
+## nova-compute.service
+# systemctl stop openstack-nova-compute.service
+# systemctl start openstack-nova-compute.service
+# systemctl status openstack-nova-compute.service
+
+cmd="systemctl stop openstack-nova-compute.service"
+cmd="systemctl start openstack-nova-compute.service"
+cmd="systemctl status openstack-nova-compute.service"
+
+ssh dct-queens-com-007-minsky $cmd
+ssh dct-queens-com-008-minsky $cmd
+ssh dct-queens-com-009-minsky $cmd
+
+python evacuation.py dct-queens-com-007-minsky
+
+
+# deneil-minsky-vm-test1
+ac5898aa-4b1c-4447-93fa-058c47dcf7b3
+
+nova evacuate --force ac5898aa-4b1c-4447-93fa-058c47dcf7b3 dct-queens-com-014
+nova evacuate --force ac5898aa-4b1c-4447-93fa-058c47dcf7b3 dct-queens-com-008-minsky
 
 
 
@@ -295,76 +341,21 @@ nova evacuate 5f125d20-b48d-4772-8f69-015b4279d81c tj-testbed-compute-005
 
 
 
-token=`openstack  token issue | grep "| id" | awk '{print $4}'`
-
-# tj-testBed
-REQ=`curl -X GET http://192.168.9.200:8774/v2.1/os-hypervisors/detail -H "Accept: application/json" -H "X-Auth-Token: $token"`
-
-echo  $REQ |  python -m json.tool > all.compute.json
 
 
-curl -X GET \
-http://osapi-fixo-1-tj.fixo.cloud:8774/v2.1/os-hosts/tj-testbed-compute-006 \
--H "X-Auth-Token: $token"
--H "User-Agent: osc-lib/1.9.0 keystoneauth1/3.4.1 python-requests/2.14.2 CPython/2.7.5" \
 
 
 
 nova live-migration --force bf235a95-6fa0-4588-a3c2-d093de16b92f tj-testbed-compute-006
 
 
-## 顯示指定節點上的VM們
-nova list --all --host tj-testbed-compute-005
-nova list --all --host tj-testbed-compute-006
+
+# deneil-test-VM-100 至 tj-testbed-compute-003 
 
 nova evacuate --force {vm} {evac_node}
 nova evacuate --force 7cf80f56-781b-48a9-b3f7-a89136d3fb8b tj-testbed-compute-003 
 
 nova live-migration --force 7cf80f56-781b-48a9-b3f7-a89136d3fb8b tj-testbed-compute-003 
-
-list="3295187f-dd85-40aa-9107-952390bba470 \
-1d03af91-7925-417d-98db-c3cca283d2fb \
-b28ba039-3c96-4200-993e-d4b9a19cda9f \
-b7a0e090-a536-4339-b19b-b0a10775d3d1 \
-aa02578e-934a-4a65-afda-2faa88e092e4 \
-65f11fa0-ee0b-4b7a-a253-6c6e96838ada"
-
-migration_node="tj-testbed-compute-005"
-for i in $list
-do
-    nova live-migration --force $i $migration_node
-    # echo "Now is $i live-migration to $migration_node"
-    sleep 3
-done
-i="65f11fa0-ee0b-4b7a-a253-6c6e96838ada"
-
-nova live-migration --force 3295187f-dd85-40aa-9107-952390bba470 tj-testbed-compute-005
-nova live-migration --force 1d03af91-7925-417d-98db-c3cca283d2fb tj-testbed-compute-005
-nova live-migration --force b28ba039-3c96-4200-993e-d4b9a19cda9f tj-testbed-compute-005
-nova live-migration --force b7a0e090-a536-4339-b19b-b0a10775d3d1 tj-testbed-compute-005
-nova live-migration --force aa02578e-934a-4a65-afda-2faa88e092e4 tj-testbed-compute-005
-nova live-migration --force 65f11fa0-ee0b-4b7a-a253-6c6e96838ada tj-testbed-compute-005
-
-
-nova show 605f9c28-5092-4654-accf-20c25fd30b4d | grep 'OS-EXT-SRV-ATTR:host'
-
-nova live-migration --block-migrate 605f9c28-5092-4654-accf-20c25fd30b4d tj-testbed-compute-005
-nova live-migration --force 605f9c28-5092-4654-accf-20c25fd30b4d tj-testbed-compute-005
-
-nova show 605f9c28-5092-4654-accf-20c25fd30b4d | grep 'OS-EXT-SRV-ATTR:host\|status'
-
-
-[root@dct-queens-ctl-001 ~]# nova show 7f0bf558-a22d-4c4b-9a21-74021c6cfaf4 | grep 'OS-EXT-SRV-ATTR:hos'
-| OS-EXT-SRV-ATTR:host                 | dct-queens-com-002                                              |
-| OS-EXT-SRV-ATTR:hostname             | may-test-vm2                                                    |
-[root@dct-queens-ctl-001 ~]# nova live-migration --block-migrate 7f0bf558-a22d-4c4b-9a21-74021c6cfaf4 dct-queens-com-003
-You have new mail in /var/spool/mail/root
-[root@dct-queens-ctl-001 ~]# nova show 7f0bf558-a22d-4c4b-9a21-74021c6cfaf4 | grep 'OS-EXT-SRV-ATTR:hos'
-| OS-EXT-SRV-ATTR:host                 | dct-queens-com-003                                              |
-| OS-EXT-SRV-ATTR:hostname             | may-test-vm2
-
-
-
 
 ###
 ## nova host-evacuate-live --force 
@@ -396,6 +387,45 @@ openstack server migrate 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e --live tj-testbed-
 nova live-migration --force 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003 
 nova live-migration 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003 
 
+nova show 605f9c28-5092-4654-accf-20c25fd30b4d | grep 'OS-EXT-SRV-ATTR:host'
+
+nova live-migration --block-migrate 605f9c28-5092-4654-accf-20c25fd30b4d tj-testbed-compute-005
+nova live-migration --force 605f9c28-5092-4654-accf-20c25fd30b4d tj-testbed-compute-005
+
+nova show 605f9c28-5092-4654-accf-20c25fd30b4d | grep 'OS-EXT-SRV-ATTR:host\|status'
+
+
+nova live-migration --force c0c8f701-1040-4f79-a482-9e6bf80010f6 dct-queens-com-007
+nova show c0c8f701-1040-4f79-a482-9e6bf80010f6 | grep 'OS-EXT-SRV-ATTR:host\|status'
+
+
+
+token=`openstack  token issue | grep "| id" | awk '{print $4}'`
+curl -g -i -X POST \
+http://osapi.dct-tb.mtjade.cloud:8774/v2.1/servers/c0c8f701-1040-4f79-a482-9e6bf80010f6/action \
+-H "Accept: application/json" \
+-H "User-Agent: python-novaclient" 
+-H "OpenStack-API-Version: compute 2.60" \
+-H "X-OpenStack-Nova-API-Version: 2.60" \
+-H "X-Auth-Token: $token" \
+-H "Content-Type: application/json" \
+-d '
+{
+    "os-migrateLive": 
+    {
+        "block_migration": "auto", 
+        "host": "dct-queens-com-007", 
+        "force": true
+    }
+}
+'
+
+
+
+
+
+
+
 
 
 
@@ -419,13 +449,6 @@ nova server-migration-list 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e
 openstack server migrate 5f125d20-b48d-4772-8f69-015b4279d81c --live tj-testbed-compute-005
 
 nova live-migration --force 5f125d20-b48d-4772-8f69-015b4279d81c tj-testbed-compute-005
-
-
-nova live-migration --force 1fd9e51e-f92a-47e0-bfb4-02ed49f325eb tj-testbed-compute-003
-
-
-
-req-a528e309-62d5-470e-a4f4-3147e1092603
 
 
 [root@tj-testbed-control-001 python_peripheral_tool]# nova evacuate --force 9acb671d-fb31-4a0c-a8a2-ae7b3f98684e tj-testbed-compute-003
@@ -512,56 +535,7 @@ Host tj-testbed-compute-005 has been successfully removed from aggregate 2
 +--------------------------------------+--------------------+--------------------------------------+
 FiCo-v2m4-Q1
 
-# FICO-Centos-7.9
-ef734296-e550-4198-9c66-84ad2be5fce4
 
-
-cinder create \
---image ef734296-e550-4198-9c66-84ad2be5fce4 \
---volume-type 
-
---availability-zone Availability-Zone-1:dct-queens-com-003 \
-
-## KH-testBed u
-nova boot \
---flavor FiCo-v2m4-Q1 \
---availability-zone Availability-Zone-1:dct-queens-com-003 \
---key-name deneil_-_keypair \
---nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
---security-groups e3cdc39a-53f0-427a-8098-48785d2e7b4e \
---boot-volume 4a5a2523-adb2-4085-a0c5-46681f1db09c \
---user-data /root/deneil-dev/password-cloud-init \
-deneil-VM-testing
-
-
-
-# deneil-VM-testing
-# 9fa46187-98e3-48e4-9dfa-5f4eb6124c5e
-# 192.168.77.25
-
-## KH-testBed admin
-nova boot \
---flavor FiCo-v2m4-Q1 \
---availability-zone Availability-Zone-1:dct-queens-com-003 \
---key-name deneil-keypair \
---nic net-id=764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 \
---security-groups e3cdc39a-53f0-427a-8098-48785d2e7b4e \
---boot-volume 4a5a2523-adb2-4085-a0c5-46681f1db09c \
---user-data /root/deneil-dev/password-cloud-init \
-deneil-VM-testing
-
-
-
-
-
-
-
-
-
-
-
-
-## tj-testBed
 ## 開 VM 到指定 compute-node
 nova boot \
 --flavor FiCo-v2m4-Q1 \
