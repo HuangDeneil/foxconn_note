@@ -145,4 +145,14 @@ curl -g -i \
 
 cinder create --image-id 03517740-3fe8-45c9-9866-36b313acd13d 50 --name deneil-test
 
+## FICO-Centos-7.9
+openstack volume create \
+--image ef734296-e550-4198-9c66-84ad2be5fce4 \
+--size 50 \
+--type Standard-SSD \
+--bootable \
+test-horizon-VM
+
+9bef74f3-d71f-4564-a283-e0468499d9c9
+
 

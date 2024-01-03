@@ -23,6 +23,22 @@ openstack server create \
 --user-data password-cloud-init \
 deneil_centos_stream_9
 
+
+# make image
+## CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2
+openstack image create \
+--container-format bare \
+--disk-format qcow2 \
+--file CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 \
+--public \
+--property title="CentOS Stream 9" \
+--property type="linux" \
+CentOS-Stream-9
+
+
+
+
+
 ```bash
 +-------------------------------------+---------------------------------------------------------------------------------------+
 | Field                               | Value                                                                                 |
@@ -572,6 +588,34 @@ nova boot \
   --boot-volume 955280b9-963b-4d2d-8cc5-7c86381b3d91 \
   --user-data /root/deneil-dev/password-cloud-init \
   --poll deneil-minsky-vm-test1
+
+
+## FICO-Centos-7.9
+openstack volume create \
+--image ef734296-e550-4198-9c66-84ad2be5fce4 \
+--size 50 \
+--type Standard-SSD \
+--bootable \
+test-horizon-VM
+
+nova boot \
+  --flavor FiCo-v2m4-Q10 \
+  --boot-volume 9bef74f3-d71f-4564-a283-e0468499d9c9 \
+  --nic port-id=5749c52c-fd4b-4ce2-8a7a-70f2725faf74 \
+  --user-data /root/deneil-dev/password-cloud-init \
+  --security-groups controller_SG \
+  --poll deneil-horizon-test
+
+## 192.168.60.221 port
+5749c52c-fd4b-4ce2-8a7a-70f2725faf74
+
+## 192.168.200.12 port
+f4a5673d-fbd1-419f-be58-78208f9eaf1c
+
+## openstack server add port <server> <port>
+openstack server add port afb44ded-046c-40f6-898a-d423fd7e6475 f4a5673d-fbd1-419f-be58-78208f9eaf1c
+
+
 
 
 nova boot \

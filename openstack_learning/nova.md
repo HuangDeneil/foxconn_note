@@ -22,10 +22,10 @@ sudo yum install -y openstack-nova
 curl -X GET http://osapi.dct-tb.mtjade.cloud:8774/v2.1/flavors/detail \
 -H "User-Agent: python-novaclient" \
 -H "Accept: application/json" \
--H "X-Auth-Token: $token
+-H "X-Auth-Token: $token"
 
-
-
+token=`openstack token issue | grep " id "| awk '{print $4}'`
+time (curl -X GET 192.168.60.200:8774/v2.1/servers -H "X-Auth-Token: $token" -H "Content-Type: application/json" )
 
 . admin-openrc.sh
 

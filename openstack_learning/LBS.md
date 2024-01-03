@@ -41,6 +41,42 @@
   lbaas-pool-update                  LBaaS v2 Update a given pool.
 ```
 
+neutron help lbaas-listener-create
+neutron lbaas-listener-create \
+--name api-dev \
+--protocol TCP \
+--protocol-port 10022
+
+neutron lbaas-member-create \
+--weight 1 \
+--subnet 5ada664c-6b24-4208-acb1-cd8c5133fd61 \
+--address 192.168.200.50 \
+--protocol-port 10022 \
+60904c78-a6bc-436f-b1b8-e7a8a5584078
+
+
+neutron help lbaas-member-create
+neutron lbaas-member-create \
+--weight 1 \
+--subnet 5ada664c-6b24-4208-acb1-cd8c5133fd61 \
+--address 192.168.200.12 \
+--protocol-port 80 \
+1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+
+neutron lbaas-member-list 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+neutron lbaas-member-show c47e0ac4-769f-4b1e-bfe8-fb188821577d 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+
+neutron lbaas-member-delete c47e0ac4-769f-4b1e-bfe8-fb188821577d 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+neutron lbaas-member-update \
+--name 
+--weight 
+MEMBER \
+POOL
+
 
 ```bash
 neutron lbaas-member-list {pool id}
@@ -57,12 +93,14 @@ curl -g -i -X GET http://osapi-fixo-6-lh.fixo.cloud:9696/v2.0/lbaas/pools/326017
 ## neutron lbaas-healthmonitor-list
 
 ```bash
+token=`openstack token issue | grep " id " | awk '{print $4}'`
+
 ## neutron lbaas-healthmonitor-list
 curl -X GET \
-http://osapi.dct-tb.mtjade.cloud:9696/v2.0/lbaas/healthmonitors \
+192.168.60.200:9696/v2.0/lbaas/healthmonitors \
 -H "User-Agent: python-neutronclient" \
 -H "Accept: application/json" \
--H "X-Auth-Token: $token"
+-H "X-Auth-Token: $token" | python -m json.tool
 ```
 
 ## neutron lbaas-loadbalancer-list 
@@ -107,6 +145,146 @@ neutron lbaas-member-create \
 --address 192.168.200.101 \
 --protocol-port 22 \
 56b6687b-d982-4e96-9809-1767dcb44ec9
+
+
+neutron lbaas-member-list caf7aea0-2129-40ab-86b1-d315d69a7f28
+neutron lbaas-member-list 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+
+
+```bash
+neutron lbaas-pool-list
+[root@dct-queens-ctl-001 ~]# neutron lbaas-pool-list
++--------------------------------------+--------------------+--------------+----------+----------------+
+| id                                   | name               | lb_algorithm | protocol | admin_state_up |
++--------------------------------------+--------------------+--------------+----------+----------------+
+| 1e655f44-ba49-4045-a471-6df393a36d4a | deneil-to-API-test | ROUND_ROBIN  | TCP      | True           |
+| 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0 | test-horizon       | ROUND_ROBIN  | TCP      | True           |
+| 4c07cb16-8cde-4dec-a107-37d297e58596 | testHTTP-crt       | ROUND_ROBIN  | HTTP     | True           |
+| 7f69a506-0473-4f54-ac28-3a7771b7b808 | mirror-ftp         | ROUND_ROBIN  | HTTP     | True           |
+| 8786762f-5381-4f04-a800-72e95b230c99 | mirror-ftp         | ROUND_ROBIN  | TCP      | True           |
+| caf7aea0-2129-40ab-86b1-d315d69a7f28 | Pool               | ROUND_ROBIN  | TCP      | True           |
++--------------------------------------+--------------------+--------------+----------+----------------+
+
+[root@dct-queens-ctl-001 ~]# neutron lbaas-listener-list
++--------------------------------------+--------------------------------------+------------------------+------------------+---------------+----------------+
+| id                                   | default_pool_id                      | name                   | protocol         | protocol_port | admin_state_up |
++--------------------------------------+--------------------------------------+------------------------+------------------+---------------+----------------+
+| 21fef3fb-f238-4fa8-b08d-cb565bb49747 | 8786762f-5381-4f04-a800-72e95b230c99 | mirror-ftp             | TCP              |          8080 | True           |
+| 44fc4a51-8ca1-4965-a487-65c56bcedc4e | caf7aea0-2129-40ab-86b1-d315d69a7f28 | openstack-control-node | TCP              |            22 | True           |
+| 53b65dcf-f820-405f-95b5-912c08943d50 | 4c07cb16-8cde-4dec-a107-37d297e58596 | testHTTP-crt           | TERMINATED_HTTPS |          8087 | True           |
+| 789214db-daab-44c9-8665-5a7ff3b9979e | 1e655f44-ba49-4045-a471-6df393a36d4a | deneil-to-API-test     | TCP              |          8787 | True           |
+| fda9d58e-6cda-4bfa-b14c-0e7edf6d1fcb | 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0 | test-horizon           | TCP              |            80 | True           |
++--------------------------------------+--------------------------------------+------------------------+------------------+---------------+----------------+
+[root@dct-queens-ctl-001 ~]# 
+
+# neutron lbaas-member-delete {member} {pool}
+neutron lbaas-member-delete 40a002fd-0bbc-4281-bb00-0e488a256392 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+## healthmonitor 需要從 neutron lbaas-pool-show <uuid> 查
+neutron lbaas-healthmonitor-delete fbdbf127-6377-4fbb-ad18-a31422f681bb
+neutron lbaas-pool-delete 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+neutron lbaas-listener-delete fda9d58e-6cda-4bfa-b14c-0e7edf6d1fcb
+
+# Load_Balancer_ID 137efcbf-3221-4aa6-a0a5-b4779656380c
+# Listener_ID fda9d58e-6cda-4bfa-b14c-0e7edf6d1fcb
+# Pool_ID 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+# Health_Monitor_ID fbdbf127-6377-4fbb-ad18-a31422f681bb
+# lbaas-member-ID 40a002fd-0bbc-4281-bb00-0e488a256392
+
+
+
+
+# Pool_ID ad33167f-1102-4b00-baab-c16d5ccae2f1
+neutron lbaas-pool-show ad33167f-1102-4b00-baab-c16d5ccae2f1
+
+
+
+neutron lbaas-member-create \
+--weight 1 \
+--subnet 5ada664c-6b24-4208-acb1-cd8c5133fd61 \
+--address 192.168.200.12 \
+--protocol-port 80 \
+ad33167f-1102-4b00-baab-c16d5ccae2f1
+
+
+lbaas-listener-id 1d8b8768-4de1-4aca-a8c5-1b7d1a15db1d
+default_pool_id ad33167f-1102-4b00-baab-c16d5ccae2f1
+
+ 32 frontend 1d8b8768-4de1-4aca-a8c5-1b7d1a15db1d
+ 33     option tcplog
+ 34     option forwardfor
+ 35     bind 192.168.200.100:80
+ 36     mode http
+ 37     default_backend ad33167f-1102-4b00-baab-c16d5ccae2f1
+... 
+ 83 
+ 84 backend ad33167f-1102-4b00-baab-c16d5ccae2f1
+ 85     mode http
+ 86     balance roundrobin
+ 87     timeout check 5s
+ 88     server 9275870b-bb37-4c06-addc-c064205e1ef4 192.168.200.12:80 weight 1 check inter 5s fall 3
+ 89 
+
+
+vim /etc/httpd/conf/httpd.conf
+
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %I %O" combinedio
+
+修改成以下字串
+
+LogFormat "%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %b" common
+
+LogFormat "%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %I %O" combinedio
+
+
+<IfModule log_config_module>
+    #
+    # The following directives define some format nicknames for use with
+    # a CustomLog directive (see below).
+    #
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+    LogFormat "%h %l %u %t \"%r\" %>s %b" common
+
+    <IfModule logio_module>
+      # You need to enable mod_logio.c to use %I and %O
+      LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %I %O" combinedio
+    </IfModule>
+
+
+
+## 嘗試修改 pool 協定 from tcp to http
+# neutron lbaas-pool-update -h
+# neutron lbaas-pool-create -h
+neutron lbaas-pool-update
+結論 >>> 沒辦法修改protocol or tcp port
+
+
+ 32 frontend fda9d58e-6cda-4bfa-b14c-0e7edf6d1fcb
+ 33     option tcplog
+ 34     maxconn 2000
+ 35     bind 192.168.200.100:80
+ 36     mode tcp
+ 37     default_backend 1ff791ce-2dd0-4554-ae1a-65f63e3cf9c0
+
+
+```
+
+
+[root@dct-queens-ctl-001 ~]# neutron lbaas-loadbalancer-list
+neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.
++--------------------------------------+---------------------+-----------------+---------------------+----------+---------+
+| id                                   | name                | vip_address     | provisioning_status | provider | timeout |
++--------------------------------------+---------------------+-----------------+---------------------+----------+---------+
+| 137efcbf-3221-4aa6-a0a5-b4779656380c | deneil-test-FHW-LBS | 192.168.200.100 | ACTIVE              | haproxy  | 3600000 |
++--------------------------------------+---------------------+-----------------+---------------------+----------+---------+
+
+
 
 ```bash
 

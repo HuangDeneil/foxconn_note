@@ -27,6 +27,14 @@ neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 -
 neutron port-create --fixed-ip subnet=deneil_subnet-2,ip-address=192.168.77.15 --name test-barbican fca993fc-fc6f-42b5-82a6-35220a3e6715
 
 
+openstack port create --network a3b3ce16-c210-4c5c-837a-0d9a9b6513a9 --fixed-ip ip-address=192.168.150.12 FHW-566-horizon
+# 192.168.150.12 935d91be-68e3-44c6-ba99-b72b115e2281
+## deneil-horizon-test add 192.168.150.12 
+openstack server add port afb44ded-046c-40f6-898a-d423fd7e6475 935d91be-68e3-44c6-ba99-b72b115e2281
+
+
+
+
 openstack port create --network 764abfc0-05ee-4a6e-8b2b-5e0b81af9bf2 --fixed-ip ip-address=192.168.77.250 test-net-port
 
 # 
@@ -126,6 +134,17 @@ openstack floating ip create \
 --project admin \
 --subnet 2dedad4a-a94b-4795-a794-7fd31f51a10c \
 us_network
+
+
+openstack floating ip create \
+--port 192.168.200.
+--floating-ip-address 10.62.164.244 \
+--fixed-ip-address
+--description 'test deneil' \
+--project deneil.yz.huang@foxconn.com_20221109 \
+--subnet ca85ca51-0324-494a-9046-bf5876654516 \
+API_net
+
 
 
 ``` bash

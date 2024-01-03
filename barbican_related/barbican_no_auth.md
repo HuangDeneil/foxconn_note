@@ -454,16 +454,166 @@ http://192.168.77.15:9311/v1/secrets/238ab6c6-61d1-4c73-81df-166836f5e010
 openstack secret store --name "test" --file test.pem --secret-type private --bit-length 2048 --algorithm rsa --debug
 
 
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
 
-curl \
--X POST http://192.168.77.15:9311/v1/secrets/ \
+curl -X POST http://192.168.60.200:9311/v1/secrets/ \
 -H "Content-Type: application/json" \
 -H "X-Auth-Token: $token" \
--d '{"name": "api secret upload test", 
+-d '
+{
+    "name": "test-sql-change-uuid", 
+    "algorithm": "rsa", 
+    "mode": "cbc", 
+    "bit_length": 256, 
+    "secret_type": "symmetric", 
+    "payload":"1WCV+fE1EeoJFhg8Nm/4mIj2bNCr6Va0d75QeYccGcU=", 
+    "payload_content_type": "application/octet-stream", 
+    "payload_content_encoding": "base64"
+}'
+
+## check 'test-sql-change-uuid' content
+curl -X GET http://192.168.60.200:9311/v1/secrets/54022053-20aa-42e4-a9d6-0dd37384a1b0/payload -H "X-Auth-Token: $token" | base64
+
+
+
+
+
+## 原始 uuid
+origin_uuid="54022053-20aa-42e4-a9d6-0dd37384a1b0"
+
+## 欲修改 uuid
+target_uuid="454c4c00-20aa-42e4-a9d6-0dd37384a1b0"
+
+## change uuid SQL CLI
+sql_cmd="\
+
+-- 檢查資料是否已經存在
+IF EXISTS (SELECT * FROM myTable WHERE 欄位名稱='欄位值')
+    UPDATE myTable SET (...) WHERE 欄位名稱='欄位值'
+ELSE
+    INSERT INTO myTable VALUES (...)
+
+UPDATE barbican.container_secret SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'; \
+UPDATE barbican.encrypted_data SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'; \
+UPDATE barbican.secrets SET id='$target_uuid' WHERE id='$origin_uuid'; \
+UPDATE barbican.secret_acls SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'; \
+UPDATE barbican.secret_store_metadata SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'; \
+UPDATE barbican.secret_user_metadata SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'; \
+"
+
+tables="\
+encrypted_data \
+secret_acls \
+secret_store_metadata \
+secret_user_metadata \
+container_secret" 
+
+
+for i in $tables
+do
+   echo "${i}"
+   cmd=`echo "select id from barbican.${i} WHERE secret_id = '$origin_uuid' or id = '$origin_uuid'"`
+   id=`mysql -h 192.168.60.22 -u root -pfoxconn -e "IF EXISTS ($cmd) ; $cmd" `
+
+done
+
+
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.container_secret SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'"
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.secret_acls SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'"
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.secret_user_metadata SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'"
+
+
+
+
+
+
+
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.secrets SET id='$target_uuid' WHERE id='$origin_uuid'"
+
+
+
+
+origin_id=`mysql -h 192.168.60.22 -u root -pfoxconn -e "select id from barbican.encrypted_data WHERE secret_id = '$origin_uuid' " | grep "[^( id )]"`
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.encrypted_data SET secret_id='$target_uuid' WHERE  id='$origin_id';"
+
+
+
+
+
+"secrets \ "
+
+mysql -h 192.168.60.22 -u root -pfoxconn -e ""
+
+SELECT * FROM barbican.secrets WHERE id = '54022053-20aa-42e4-a9d6-0dd37384a1b0' 
+SELECT * FROM barbican.secret_store_metadata WHERE secret_id='54022053-20aa-42e4-a9d6-0dd37384a1b0'
+
+
+## 建立secret uuid 在 barbican.secrets
+mysql -h 192.168.60.22 -u root -pfoxconn -e "INSERT INTO barbican.secrets (id, created_at, updated_at, deleted_at, deleted, status, name, expiration, algorithm, bit_length, mode, secret_type, creator_id, project_id) VALUES ('454c4c00-20aa-42e4-a9d6-0dd37384a1b0', NOW(), NOW(), NULL, 0, 'ACTIVE', 'add-empty-value-uuid', NULL, 'rsa', 256, 'cbc', 'symmetric', 'e9c8e161a8a44544b3bfd734eebb3ba1', '95112484-9b21-41b7-a6d8-96224f8a7002') "
+
+## secret_store_metadata
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.secret_store_metadata SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'"
+
+## encrypted_data
+mysql -h 192.168.60.22 -u root -pfoxconn -e "UPDATE barbican.encrypted_data SET secret_id='$target_uuid' WHERE secret_id='$origin_uuid'"
+
+
+
+sql_cmd=""
+
+
+
+mysql -h 192.168.60.22 -u root -pfoxconn -e "$sql_cmd"
+
+
+
+
+
+openstack secret order create key --name 'order-create-asy-test' --bit-length 256 --algorithm aes
+
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+curl -X GET http://192.168.60.200:9311/v1/secrets/0ec2100b-5d42-4e9c-bd5a-229db09021e0/payload -H "X-Auth-Token: $token" | base64 > order-create-asy-test.key
+
+# openstack secret store
+openstack secret store --name "test" --file test.pem --secret-type private --bit-length 2048 --algorithm rsa --debug
+
+openstack secret store --name="upload-order-create" --payload="`cat order-create-asy-test.key `" --payload-content-type="application/octet-stream" --payload-content-encoding='base64'
+
+
+token=`openstack token issue | grep "| id" | awk '{print $4}'`
+curl -X GET http://192.168.60.200:9311/v1/secrets/0ec2100b-5d42-4e9c-bd5a-229db09021e0/payload -H "X-Auth-Token: $token" | base64
+
+curl -X GET http://192.168.60.200:9311/v1/secrets/f354b597-0013-4eda-8828-f0d6da4be146/payload -H "X-Auth-Token: $token" | base64 
+
+
+## symmetric
+http://192.168.60.200:9311/v1/secrets/76115942-e287-4066-90f9-566b121bbf02
+
+## rsa
+http://192.168.60.200:9311/v1/secrets/e79ae1e8-1a63-401a-a5f7-a28581cb1623
+
+
+
+
+UPDATE `barbican`.`encrypted_data` SET `secret_id`='76115942-e287-4066-90f9-566b121bbf02' WHERE  `id`='433e2e14-6eba-4c54-ae17-703320c0a2fd';
+
+UPDATE `barbican`.`encrypted_data` SET `secret_id`='e79ae1e8-1a63-401a-a5f7-a28581cb1623' WHERE  `id`='9ff2f0fa-f6fa-49f6-8957-9ea09e02c2dd';
+
+
+curl -X GET http://192.168.60.200:9311/v1/secrets/e79ae1e8-1a63-401a-a5f7-a28581cb1623/payload -H "X-Auth-Token: $token" | base64
+
+curl -X GET http://192.168.60.200:9311/v1/secrets/76115942-e287-4066-90f9-566b121bbf02/payload -H "X-Auth-Token: $token" | base64
+
+
+
+curl -X POST http://192.168.60.200:9311/v1/secrets/ \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: $token" \
+-d '{"name": "test-sql-update", 
 "algorithm": "rsa", 
 "mode": "cbc", 
 "bit_length": 2048, 
-"secret_type": "private", 
+"secret_type": "symmetric", 
 "payload": "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRQ29KOWFUYUVRQWZTWk4KSnpmOXpiVjY1WnUvbXhycndxUGtVVjFpeTF2dGZBOUZiSzl6T1F1RGpCalZUMjQ1TEdqaXNTbFpjV01qYzFkZQpGNXN3N3NML213SVhnOWFONEl4MU9QRjBjVllWV05QMnA3aUllN1Z4QXdTZWVxNFhvMzVMU0lYMzRHQUR2alFvCm1xa2tlZzBEVkFMdGFVTzJKMjZPMldVTFJCQnpCck1pOXdaRGsrZHRFeStEV2g4bWhDZi9DVWxUZGx4TlRYNTAKOTl1MU8rMmVXcHhQcFJQcjdLUE1OWlJVNFFZUERqM0NjeDBGMGlZUEs0bFViWTlLWmhma0ZWMUpTaisweVk0OApCeXhKVVlaNUdzd2NhRGx5YVhWUGgyTTdmRHFPanM2R2RCUFIrcXA4VVZNU293eFREeFgwbjM0bmdXZG9FaTByCmo2WUpWMUIzQWdNQkFBRUNnZ0VBT0JBZ01FRkErdEMrNWxZL0NyVjgzaDZUVU15THF6TFhwWldqQnY4NkJQR3AKdmNIQXRTKzlzUHdTZzN2YUNlSE9qbFgyclVWcWdqVkFXYlNSSHoxYmNoRGlINmpxN1o2Qjljc29aV1FzQ1MzMgpiWFA1eURkR2hRazJqd2ZqNXlteFA3Uk1SaHBlcUtEUGp3SVJob0hTdU50WHBvUEQrWVVvRFNSWjFlbTVlaitrCmU5eHJ0cXJXSk91RmMvcndjTCsyRk1xNHZ0WGpkMGNBOU94MldJQUhyNmppTVV4NjFESFJwZG1TWUx5N3FVL2sKd2cvVlVpcHp3L096WEZvT01iRnFDYTR3bmNBd0lzTFp1ZVczYXdmVFkzZThMNnBZWUFLOFdidUk1K1F2ZWJjaQpWYUNtZmxTOTJabHdWZ2NsRjIyN3k2a2l2ZmhDWmlhNGZNOTFndE1lVVFLQmdRRG1SeU41aE1nMU9BbmtVTzZlCnBvVjhTVCtSbFBHU3lRRndGY2FjdmdQY0hnSmV5ZUVCM0NXY1Q0dTBKNHg4MlhBS2U4ZFhOcFhHOTdlRzFnakEKb0l2K3R5MDFuRGZVakppWDYvaXYyRmtpRW5ZaC9WZWhiQzYycEdrL3ZmdXJ1RVI1cmVtaDBDYkM2KzNaMjYzRgpqTTQ5RW1zVm1MTm9EMld0NnpyV3lQVnBld0tCZ1FDNjhFdTNjekl1S3Z6WXdpeDJyM2VlbXY3R093NFRHc1pxCitsaUJBcmhQN2R5S3V2OGtjcitzWEtQMzBSdy9GNGt1TnhUWjZpT1VwMCsraWZQdE11L0d6Q0REc0xmT2MrbmMKdlRZd1V1Uk9QZm1FaE90dDczYW9UdStHSDlSb0pyUWE2V3lSUnl4b0xsVDRNNTBFUGl2UVhIenRZamx1WFY3aApsRnhmMzU5T05RS0JnUUNpM0VFY21tbzJLVkhscGM5OWFPd1RRSUt5NVpJTWJCaVdPdkJpdm9oZ1R1RUNST2piCnRlVHJyZDV5SlY1WWxqZUZVcEZpL3ZuaTVDTnFPMG1wWW1KZ1hSQ2VUOE8wa1ZNQ2J5Tk15a2dQcnRyWm95RXMKeXlRbWpCVGJ2Zk9XT1JaRXNGa0IxZ0x6N0lRbGhoWmFGd0Z0Yys5RU1PRUJnWkk1OUptQ2VsSUdyUUtCZ1FDTQpqamlnQ3FGa1RUWW4xSGVTRllTZllITEhvWWVIbmM0cWlXa2FOMjFWeThiVEdKN1dUT0VKTys2ZFdrRWV2eGVLCkJDaE5ZTnEzM3NUNndzY0JSaGM3SmloTWV3YjQxL2F5M2lGc1hDY0ZIVndLNDlZUXBzaFU3R1QwTitLQkhQaTIKYzJRS0o3V2Y3NVk3dUxNS2lhUnYyZHFrc2dIMGxZZk5uTHVINnAvaE1RS0JnRjl5dXJ5d29kMkhiOXVUR3pHUwpITEZaSTQ0UW5LcEpyL2tTUGh5aDkwby81MktUbGhuTjNDOG1KODF0TEpoQU9IMUw3YmVlRzJoaVl5eStnUUNVCi9SZWp5MkNwUWtreXljOUFFekZjeEh6bHVIMDN1d0R6eUxoRFlaN0p3ZVk3VjhOVlIwNzNRTSt3YmM5b28zSFUKR1VVVGlhc0YzS3RxSUYzcnBxQU0vbDBmCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K", "payload_content_type": "application/octet-stream", 
 "payload_content_encoding": "base64"}'
 
@@ -474,8 +624,7 @@ openstack secret store --name "test-2" --file test.pem --secret-type private --b
 
 
 token=`openstack  token issue | grep "| id" | awk '{print $4}'`
-curl -g -i \
--X POST http://127.0.0.1:9311/v1/secrets/ \
+curl -X POST http://127.0.0.1:9311/v1/secrets/ \
 -H "Content-Type: application/json" \
 -H "User-Agent: openstacksdk/0.101.0 keystoneauth1/5.0.0 python-requests/2.25.1 CPython/3.9.14" \
 -H "X-Auth-Token: $token" \
@@ -1190,6 +1339,10 @@ Content:
 
 
 openstack secret order create key --name 'admin-create-asy-test' --bit-length 256 --algorithm aes
+
+openstack secret order create key --name 'order-create-asy-test' --bit-length 256 --algorithm aes
+
+
 
 openstack secret order get http://192.168.60.200:9311/v1/orders/1275f8f8-868f-40b4-b365-9064f49af71d
 

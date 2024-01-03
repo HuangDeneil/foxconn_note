@@ -5,3 +5,4 @@ barbican_required/
 hello_flask/
 ssh_test/__pycache__/
 */__pycache__/
+test/
