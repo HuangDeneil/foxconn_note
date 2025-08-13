@@ -1,0 +1,6 @@
+kolla/
+kolla-ansible/
+kolla_conf/kolla
+kolla_conf/openstack
+.env/
+python_env/
