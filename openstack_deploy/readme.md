@@ -9,8 +9,8 @@
         [
             {
                 "name":   "node1",
-                "enp0s3": "192.168.1.144",
-                "enp0s8": "192.168.56.121",
+                "enp0s3": "192.168.1.109",
+                "enp0s8": "192.168.56.124",
                 "disk_size": "200GB",
                 "os": "rocky linux 9.5",
                 "root_password": "foxconn",
@@ -21,8 +21,20 @@
             },
             {
                 "name":      "node2",
-                "enp0s3":    "192.168.1.183",
-                "enp0s8":    "192.168.56.122",
+                "enp0s3":    "192.168.1.16",
+                "enp0s8":    "192.168.56.125",
+                "disk_size": "200GB",
+                "os":        "rocky linux 9.5",
+                "root_password": "foxconn",
+                "CPU":        "4",
+                "memery":     "8GB",
+                "openstack node role": "network,compute",
+                "Nested VT-x/AMD-V":   "Enable"
+            },
+            {
+                "name":      "node3",
+                "enp0s3":    "192.168.1.248",
+                "enp0s8":    "192.168.56.126",
                 "disk_size": "200GB",
                 "os":        "rocky linux 9.5",
                 "root_password": "foxconn",
@@ -136,16 +148,18 @@
     kolla-ansible -i /root/openstack/inventory.ini bootstrap-servers
 
     # 1.1主機名稱解析 & /etc/docker/daemon.json 配置 insecure-registries
-    for node in "node1 node2"
+    
+    node_list="node1 node2 node3"
+    for node in $node_list
     do 
-
-    ssh $node sh -c "
-    echo -e '
-    192.168.1.144 node1
-    192.168.1.183 node2
-    192.168.1.102 iaas.fixo.cloud
-    ' >> /etc/hosts"
-
+    ssh $node sh -c 'echo "192.168.1.109 node1" >> /etc/hosts'
+    ssh $node sh -c 'echo "192.168.1.16  node2" >> /etc/hosts'
+    ssh $node sh -c 'echo "192.168.1.248 node3" >> /etc/hosts'
+    ssh $node sh -c 'echo "192.168.1.102 iaas.fixo.cloud" >> /etc/hosts'
+    done
+    
+    for node in $node_list
+    do 
     ssh $node 'sudo tee /etc/docker/daemon.json > /dev/null << '"'"'EOF'"'"'
     {
         "bridge": "none",
@@ -165,6 +179,7 @@
         "insecure-registries": ["iaas.fixo.cloud:4000"]
     }
     EOF'""
+    systemctl start docker
     done
 
     # 2. 預檢查
@@ -221,39 +236,57 @@ curl -O https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud
 
 ## upload cloud image
 . admin-openrc.sh
-openstack image create 
---container-format bare 
---disk-format qcow2 
---file  Rocky-9-GenericCloud-Base-9.6-20250531.0.x86_64.qcow2 
---public --property title="Rocky linux 9" 
+openstack image create \
+--container-format bare \
+--disk-format qcow2 \
+--file  Rocky-9-GenericCloud-Base-9.6-20250531.0.x86_64.qcow2 \
+--public --property title="Rocky linux 9" \
 --property type="linux" rocky9
 
 ## Create flavor
+openstack flavor create \
+--vcpus 1 \
+--ram 2048 \
+--public \
+FiCo-v1m2
 
-## Create AZ & Set node1&node2 to AZ
+## Create AZ & Add node to AZ
+openstack aggregate create --zone zone1 zone1
+openstack aggregate add host zone1 node1
+openstack aggregate add host zone1 node2
+openstack aggregate add host zone1 node3
 
 ## Create network
 openstack network create my_private_network
-openstack subnet create --network my_private_network --subnet-range 192.168.1.0/24 my_private_subnet
+openstack subnet create --network my_private_network --subnet-range 192.168.10.0/24 my_private_subnet
+
+## upload key
+openstack keypair create --public-key ~/.ssh/id_rsa.pub rd_key
 
 ## Create VM
 openstack server create \
---flavor 77e20ff1-3c5e-4619-b6b4-6d751dfa1c15 \
---image 146136cc-a63e-4fd1-8f8c-30fbedc82087 \
---nic net-id=75fdcbf3-fde6-4ce0-826a-eadbfd18b565 \
+--flavor FiCo-v1m2 \
+--image 3c9e8b91-02cb-487a-9fce-f798fe73efda \
+--nic net-id=79a12db3-b2c6-4ed6-bc53-13ff3171f6da \
 --key-name rd_key \
 --user-data /root/password-cloud-init \
 vm1
 
 openstack server create \
---flavor 77e20ff1-3c5e-4619-b6b4-6d751dfa1c15 \
---image 146136cc-a63e-4fd1-8f8c-30fbedc82087 \
---nic net-id=75fdcbf3-fde6-4ce0-826a-eadbfd18b565 \
+--flavor FiCo-v1m2 \
+--image 3c9e8b91-02cb-487a-9fce-f798fe73efda \
+--nic net-id=79a12db3-b2c6-4ed6-bc53-13ff3171f6da \
 --key-name rd_key \
 --user-data /root/password-cloud-init \
 vm2
 
-
+openstack server create \
+--flavor FiCo-v1m2 \
+--image 3c9e8b91-02cb-487a-9fce-f798fe73efda \
+--nic net-id=79a12db3-b2c6-4ed6-bc53-13ff3171f6da \
+--key-name rd_key \
+--user-data /root/password-cloud-init \
+vm3
 
 ```
 
